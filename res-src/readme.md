@@ -1,0 +1,4 @@
+- `icons.ase` is the Aseprite master for all the custom hand-drawn icons
+- `ter-u12b.bdf` and `ter-u14b.bdf` fonts are from https://terminus-font.sourceforge.net/
+- `ter-u14b.patch.sfd` is a FontForge file containing a modified subset of `ter-u14b.bdf` with some characters horizontally condensed, to be patched onto the original
+- `make_res.py` generates images and fonts into the shield's [`res`](../boards/shields/nice_view_sno1/res/) directory
