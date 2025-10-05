@@ -2,6 +2,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(sno, CONFIG_ZMK_LOG_LEVEL);
 
+#include <stdio.h>
+
 #include <zephyr/devicetree.h>
 #define DISPLAY_X_RES DT_PROP(DT_CHOSEN(zephyr_display), width)
 #define DISPLAY_Y_RES DT_PROP(DT_CHOSEN(zephyr_display), height)
@@ -15,19 +17,18 @@ void print_snapshot(lv_obj_t *screen) {
                                 "🬶", "🬄", "🬣", "▌", "🬲", "🬌", "🬪", "🬛", "🬺", "🬂", "🬡", "🬒", "🬰",
                                 "🬊", "🬨", "🬙", "🬸", "🬆", "🬥", "🬕", "🬴", "🬎", "🬬", "🬝", "█"};
 
-    const lv_img_cf_t fmt = LV_IMG_CF_TRUE_COLOR;
-    lv_color_t buf[LV_IMG_BUF_SIZE_TRUE_COLOR(DISPLAY_X_RES, DISPLAY_Y_RES)];
-    lv_img_dsc_t img;
-    const lv_color_t bg = lv_obj_get_style_bg_color(screen, LV_PART_MAIN);
+    LV_DRAW_BUF_DEFINE_STATIC(draw_buf, DISPLAY_X_RES, DISPLAY_Y_RES, LV_COLOR_FORMAT_RGB888);
+    LV_DRAW_BUF_INIT_STATIC(draw_buf);
 
     const int w = lv_obj_get_width(screen);
     const int h = lv_obj_get_height(screen);
 
     bool get_px(int x, int y) {
         return (x >= 0 && y >= 0 && x < w && y < h) &&
-               lv_img_buf_get_px_color(&img, x, y, bg).full != bg.full;
+               (*(uint8_t *)lv_draw_buf_goto_xy(&draw_buf, x, y)) == 0;
     }
-    if (lv_snapshot_take_to_buf(screen, fmt, &img, buf, sizeof(buf)) != LV_RES_INV) {
+
+    if (lv_snapshot_take_to_draw_buf(screen, LV_COLOR_FORMAT_RGB888, &draw_buf) != LV_RES_INV) {
         LOG_INF("%dx%d lvgl snapshot...", w, h);
         for (int y = 0; y < h; y += 3) {
             char line[(MAX(DISPLAY_X_RES, DISPLAY_Y_RES) / 2 + 1) * 4] = {0};

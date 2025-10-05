@@ -78,7 +78,7 @@ void update_layout_cb(struct k_work *work) {
     if (!layout_done)
         k_work_reschedule(CONTAINER_OF(work, struct k_work_delayable, work), K_MSEC(33));
 
-#if IS_ENABLED(CONFIG_DISPLAY_DEMO_MODE) && IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX)
+#if IS_ENABLED(CONFIG_DISPLAY_DEMO_MODE) && IS_ENABLED(CONFIG_BOARD_NATIVE_SIM)
     LOG_INF("layout_done = %d", layout_done);
     print_snapshot(lv_scr_act());
 #endif
@@ -312,7 +312,6 @@ lv_obj_t *zmk_display_status_screen() {
     k_work_reschedule(&hide_timedout_indicators_work1, K_MSEC(CONFIG_LOCK_ICONS_TIMEOUT));
 #endif
 
-#if IS_ENABLED(CONFIG_BOARD_NATIVE_POSIX)
     // needed to get proper background color on snapshots
     static lv_style_t style;
     lv_style_init(&style);
@@ -320,7 +319,6 @@ lv_obj_t *zmk_display_status_screen() {
     lv_style_set_bg_opa(&style, LV_OPA_COVER);
     lv_obj_add_style(splash_screen, &style, LV_PART_MAIN);
     lv_obj_add_style(main_screen, &style, LV_PART_MAIN);
-#endif
 
 #if IS_ENABLED(CONFIG_DISPLAY_DEMO_MODE)
     srand(123);
