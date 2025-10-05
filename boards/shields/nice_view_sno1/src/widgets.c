@@ -78,8 +78,10 @@ bool update_main_screen_layout(struct widget_set *widgets) {
 void battery_widget_update(struct widget *widget, const struct batteries_state *state) {
     lv_canvas_fill_bg(widget->canvas, LVGL_BG, LV_OPA_COVER);
 
+    lv_layer_t layer;
+    lv_canvas_init_layer(widget->canvas, &layer);
+
     lv_draw_rect_dsc_t rect_dsc_fg = init_rect_dsc(LVGL_FG);
-    lv_draw_img_dsc_t img_dsc = init_img_dsc();
 
     const int h = icon_battery.header.h;
     const int w = icon_battery.header.w;
@@ -87,16 +89,15 @@ void battery_widget_update(struct widget *widget, const struct batteries_state *
 
     void draw_battery(const struct battery_state *bat, const int x, const int y) {
         const int charge_h = (bat->percentage / 100.) * charge_h_max;
-        lv_canvas_draw_rect(widget->canvas, x + 4, y + 3, w - 8, charge_h, &rect_dsc_fg);
+        draw_rect(&layer, x + 4, y + 3, w - 8, charge_h, &rect_dsc_fg);
 
-        lv_canvas_draw_img(widget->canvas, x, y,
-                           bat->percentage <= 0 ? &icon_battery_na : &icon_battery, &img_dsc);
+        draw_img(&layer, x, y, bat->percentage <= 0 ? &icon_battery_na : &icon_battery);
         if (bat->power_state == BAT_CHARGING || bat->power_state == BAT_POWERED)
-            lv_canvas_draw_img(widget->canvas, x, y, &icon_battery_dither, &img_dsc);
+            draw_img(&layer, x, y, &icon_battery_dither);
         if (bat->power_state == BAT_CHARGING) {
             const int x2 = x + (w - icon_battery_bolt.header.w) / 2;
             const int y2 = y + (h - icon_battery_bolt.header.h) / 2;
-            lv_canvas_draw_img(widget->canvas, x2, y2, &icon_battery_bolt, &img_dsc);
+            draw_img(&layer, x2, y2, &icon_battery_bolt);
         }
     }
 
@@ -109,6 +110,8 @@ void battery_widget_update(struct widget *widget, const struct batteries_state *
 #elif DISPLAYED_BATTERY_COUNT == 1
     draw_battery(&state->batteries[0], 0, BATTERY_WIDGET_H / 2 - h / 2);
 #endif
+
+    lv_canvas_finish_layer(widget->canvas, &layer);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,11 +122,13 @@ const lv_img_dsc_t *digit_imgs[10] = {&icon_n0, &icon_n1, &icon_n2, &icon_n3, &i
 void output_widget_update(struct widget *widget, const struct output_state *state) {
     lv_canvas_fill_bg(widget->canvas, LVGL_BG, LV_OPA_COVER);
 
+    lv_layer_t layer;
+    lv_canvas_init_layer(widget->canvas, &layer);
+
     void show_icon(const lv_img_dsc_t *img, int x, int y) {
         const int dx = OUTPUT_WIDGET_W / 2 - img->header.w / 2;
         const int dy = OUTPUT_WIDGET_H / 2 - img->header.h / 2;
-        lv_draw_img_dsc_t img_dsc = init_img_dsc();
-        lv_canvas_draw_img(widget->canvas, x + dx, y + dy, img, &img_dsc);
+        draw_img(&layer, x + dx, y + dy, img);
     }
 
     void show_usb_icon(int y) {
@@ -168,6 +173,8 @@ void output_widget_update(struct widget *widget, const struct output_state *stat
         show_icon(&icon_endpoint_dither, 0, y_ble);
         break;
     }
+
+    lv_canvas_finish_layer(widget->canvas, &layer);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -193,7 +200,7 @@ void profiles_widget_update(struct widget *widget, const struct output_state *st
     lv_draw_label_dsc_t label_dsc = init_label_dsc(LVGL_FG, font, LV_TEXT_ALIGN_CENTER);
     label_dsc.line_space = 2;
     label_dsc.letter_space = c == 5 || c == 9 ? 2 : 3;
-    canvas_draw_text_90(widget->canvas, 0, 0, ((lv_canvas_t *)widget->canvas)->dsc.header.h,
+    canvas_draw_text_90(widget->canvas, 0, 0, lv_canvas_get_draw_buf(widget->canvas)->header.h,
                         &label_dsc, str, false);
 
     const int h = font->line_height;
@@ -207,7 +214,7 @@ void layer_widget_update(struct widget *widget, const struct layer_state *state)
 
     lv_draw_label_dsc_t label_dsc =
         init_label_dsc(LVGL_FG, &font_ter_u14b_mod, LV_TEXT_ALIGN_CENTER);
-    const int h = ((lv_canvas_t *)widget->canvas)->dsc.header.h;
+    const int h = lv_canvas_get_draw_buf(widget->canvas)->header.h;
     if (state->label == NULL || strlen(state->label) == 0) {
         char layer_text[10] = {};
         sprintf(layer_text, "layer %i", state->index);
@@ -233,7 +240,7 @@ void locks_widget_update(struct widget *widget, const struct locks_state *state)
 
     lv_draw_label_dsc_t label_dsc = init_label_dsc(LVGL_FG, &font_indicators, LV_TEXT_ALIGN_CENTER);
     label_dsc.letter_space = 6;
-    canvas_draw_text_90(widget->canvas, 0, 0, ((lv_canvas_t *)widget->canvas)->dsc.header.h,
+    canvas_draw_text_90(widget->canvas, 0, 0, lv_canvas_get_draw_buf(widget->canvas)->header.h,
                         &label_dsc, locks_str, false);
 
     widget->w = c > 0 ? LOCKS_WIDGET_W : 0;
