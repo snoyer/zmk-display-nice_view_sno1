@@ -9,6 +9,15 @@
             bindings = <&kp A &kp B &kp C &kp D>;
         };
     };
+
+    chosen {
+        zephyr,display = &dummy_dc;
+    };
+    dummy_dc: dummy_dc {
+        compatible = "zephyr,dummy-dc";
+        width = <160>;
+        height = <68>;
+    };
 };
 
 
@@ -19,7 +28,3 @@
     >;
 };
 
-&sdl_dc {
-    width = <160>;
-    height = <68>;
-};
