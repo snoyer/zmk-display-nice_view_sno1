@@ -9,11 +9,11 @@ LOG_MODULE_DECLARE(sno, CONFIG_ZMK_LOG_LEVEL);
 #include "text-fonts.h"   // generated
 
 void setup_widgets(struct widget_set *widgets, lv_obj_t *screen) {
-    WIDGET_INIT(screen, widgets->batteries_widget, BATTERY_WIDGET_W, BATTERY_WIDGET_H)
-    WIDGET_INIT(screen, widgets->output_widget, OUTPUT_WIDGET_W, OUTPUT_WIDGET_H)
-    WIDGET_INIT(screen, widgets->profiles_widget, PROFILES_WIDGET_W, PROFILES_WIDGET_H)
-    WIDGET_INIT(screen, widgets->layer_widget, LAYER_WIDGET_W, LAYER_WIDGET_H)
-    WIDGET_INIT(screen, widgets->locks_widget, LOCKS_WIDGET_W, LOCKS_WIDGET_H)
+    CANVAS_WIDGET_INIT(screen, widgets->batteries_widget, BATTERY_WIDGET_W, BATTERY_WIDGET_H)
+    CANVAS_WIDGET_INIT(screen, widgets->output_widget, OUTPUT_WIDGET_W, OUTPUT_WIDGET_H)
+    CANVAS_WIDGET_INIT(screen, widgets->profiles_widget, PROFILES_WIDGET_W, PROFILES_WIDGET_H)
+    CANVAS_WIDGET_INIT(screen, widgets->layer_widget, LAYER_WIDGET_W, LAYER_WIDGET_H)
+    CANVAS_WIDGET_INIT(screen, widgets->locks_widget, LOCKS_WIDGET_W, LOCKS_WIDGET_H)
 
     update_main_screen_layout_targets(widgets);
     update_main_screen_layout(widgets);
@@ -64,11 +64,11 @@ bool update_main_screen_layout(struct widget_set *widgets) {
     const bool all_done = a && b && c && d && e;
 
     const lv_align_t align = LV_ALIGN_RIGHT_MID;
-    lv_obj_align(widgets->batteries_widget.canvas, align, widgets->batteries_widget.x, 0);
-    lv_obj_align(widgets->output_widget.canvas, align, widgets->output_widget.x, 0);
-    lv_obj_align(widgets->profiles_widget.canvas, align, widgets->profiles_widget.x, 0);
-    lv_obj_align(widgets->layer_widget.canvas, align, widgets->layer_widget.x, 0);
-    lv_obj_align(widgets->locks_widget.canvas, align, widgets->locks_widget.x, 0);
+    lv_obj_align(widgets->batteries_widget.obj, align, widgets->batteries_widget.x, 0);
+    lv_obj_align(widgets->output_widget.obj, align, widgets->output_widget.x, 0);
+    lv_obj_align(widgets->profiles_widget.obj, align, widgets->profiles_widget.x, 0);
+    lv_obj_align(widgets->layer_widget.obj, align, widgets->layer_widget.x, 0);
+    lv_obj_align(widgets->locks_widget.obj, align, widgets->locks_widget.x, 0);
 
     return all_done;
 }
@@ -76,10 +76,10 @@ bool update_main_screen_layout(struct widget_set *widgets) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void battery_widget_update(struct widget *widget, const struct batteries_state *state) {
-    lv_canvas_fill_bg(widget->canvas, LVGL_BG, LV_OPA_COVER);
+    lv_canvas_fill_bg(widget->obj, LVGL_BG, LV_OPA_COVER);
 
     lv_layer_t layer;
-    lv_canvas_init_layer(widget->canvas, &layer);
+    lv_canvas_init_layer(widget->obj, &layer);
 
     lv_draw_rect_dsc_t rect_dsc_fg = init_rect_dsc(LVGL_FG);
 
@@ -111,7 +111,7 @@ void battery_widget_update(struct widget *widget, const struct batteries_state *
     draw_battery(&state->batteries[0], 0, BATTERY_WIDGET_H / 2 - h / 2);
 #endif
 
-    lv_canvas_finish_layer(widget->canvas, &layer);
+    lv_canvas_finish_layer(widget->obj, &layer);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -120,10 +120,10 @@ const lv_img_dsc_t *digit_imgs[10] = {&icon_n0, &icon_n1, &icon_n2, &icon_n3, &i
                                       &icon_n5, &icon_n6, &icon_n7, &icon_n8, &icon_n9};
 
 void output_widget_update(struct widget *widget, const struct output_state *state) {
-    lv_canvas_fill_bg(widget->canvas, LVGL_BG, LV_OPA_COVER);
+    lv_canvas_fill_bg(widget->obj, LVGL_BG, LV_OPA_COVER);
 
     lv_layer_t layer;
-    lv_canvas_init_layer(widget->canvas, &layer);
+    lv_canvas_init_layer(widget->obj, &layer);
 
     void show_icon(const lv_img_dsc_t *img, int x, int y) {
         const int dx = OUTPUT_WIDGET_W / 2 - img->header.w / 2;
@@ -174,13 +174,13 @@ void output_widget_update(struct widget *widget, const struct output_state *stat
         break;
     }
 
-    lv_canvas_finish_layer(widget->canvas, &layer);
+    lv_canvas_finish_layer(widget->obj, &layer);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void profiles_widget_update(struct widget *widget, const struct output_state *state) {
-    lv_canvas_fill_bg(widget->canvas, LVGL_BG, LV_OPA_COVER);
+    lv_canvas_fill_bg(widget->obj, LVGL_BG, LV_OPA_COVER);
 
     char str[MIN(CONFIG_TRACKED_PROFILE_COUNT, 9) + 1] = {0};
     uint8_t c = 0;
@@ -200,7 +200,7 @@ void profiles_widget_update(struct widget *widget, const struct output_state *st
     lv_draw_label_dsc_t label_dsc = init_label_dsc(LVGL_FG, font, LV_TEXT_ALIGN_CENTER);
     label_dsc.line_space = 2;
     label_dsc.letter_space = c == 5 || c == 9 ? 2 : 3;
-    canvas_draw_text_90(widget->canvas, 0, 0, lv_canvas_get_draw_buf(widget->canvas)->header.h,
+    canvas_draw_text_90(widget->obj, 0, 0, lv_canvas_get_draw_buf(widget->obj)->header.h,
                         &label_dsc, str, false);
 
     const int h = font->line_height;
@@ -210,24 +210,24 @@ void profiles_widget_update(struct widget *widget, const struct output_state *st
 ////////////////////////////////////////////////////////////////////////////////
 
 void layer_widget_update(struct widget *widget, const struct layer_state *state) {
-    lv_canvas_fill_bg(widget->canvas, LVGL_BG, LV_OPA_COVER);
+    lv_canvas_fill_bg(widget->obj, LVGL_BG, LV_OPA_COVER);
 
     lv_draw_label_dsc_t label_dsc =
         init_label_dsc(LVGL_FG, &font_ter_u14b_mod, LV_TEXT_ALIGN_CENTER);
-    const int h = lv_canvas_get_draw_buf(widget->canvas)->header.h;
+    const int h = lv_canvas_get_draw_buf(widget->obj)->header.h;
     if (state->label == NULL || strlen(state->label) == 0) {
         char layer_text[10] = {};
         sprintf(layer_text, "layer %i", state->index);
-        canvas_draw_text_90(widget->canvas, 0, 0, h, &label_dsc, layer_text, true);
+        canvas_draw_text_90(widget->obj, 0, 0, h, &label_dsc, layer_text, true);
     } else {
-        canvas_draw_text_90(widget->canvas, 0, 0, h, &label_dsc, state->label, true);
+        canvas_draw_text_90(widget->obj, 0, 0, h, &label_dsc, state->label, true);
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void locks_widget_update(struct widget *widget, const struct locks_state *state) {
-    lv_canvas_fill_bg(widget->canvas, LVGL_BG, LV_OPA_COVER);
+    lv_canvas_fill_bg(widget->obj, LVGL_BG, LV_OPA_COVER);
 
     char locks_str[4] = {0};
     uint8_t c = 0;
@@ -240,7 +240,7 @@ void locks_widget_update(struct widget *widget, const struct locks_state *state)
 
     lv_draw_label_dsc_t label_dsc = init_label_dsc(LVGL_FG, &font_indicators, LV_TEXT_ALIGN_CENTER);
     label_dsc.letter_space = 6;
-    canvas_draw_text_90(widget->canvas, 0, 0, lv_canvas_get_draw_buf(widget->canvas)->header.h,
+    canvas_draw_text_90(widget->obj, 0, 0, lv_canvas_get_draw_buf(widget->obj)->header.h,
                         &label_dsc, locks_str, false);
 
     widget->w = c > 0 ? LOCKS_WIDGET_W : 0;
