@@ -14,7 +14,7 @@
 #endif
 
 struct widget {
-    lv_obj_t *canvas;
+    lv_obj_t *obj;
     int x;
     int target_x;
     int w;
@@ -83,12 +83,12 @@ void locks_widget_update(struct widget *widget, const struct locks_state *state)
 ////////////////////////////////////////////////////////////////////////////////
 
 #define WIDGET_DUMMY_POS_VAL -123456
-#define WIDGET_INIT(parent, widget, W, H)                                                          \
+#define CANVAS_WIDGET_INIT(parent, widget, W, H)                                                   \
     {                                                                                              \
-        widget.canvas = lv_canvas_create(parent);                                                  \
+        widget.obj = lv_canvas_create(parent);                                                     \
+        lv_canvas_set_buffer(widget.obj, widget##_buf, W, H, WIDGET_BUF_FMT);                      \
         widget.w = W;                                                                              \
         widget.x = WIDGET_DUMMY_POS_VAL;                                                           \
-        lv_canvas_set_buffer(widget.canvas, widget##_buf, W, H, WIDGET_BUF_FMT);                   \
     }
 
 struct widget_set {
