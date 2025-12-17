@@ -27,4 +27,3 @@
         // no meaningful events, we'll have a demo mode cycling through synthetic states
     >;
 };
-
