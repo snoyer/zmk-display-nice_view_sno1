@@ -25,7 +25,7 @@ void print_snapshot(lv_obj_t *screen) {
 
     bool get_px(int x, int y) {
         return (x >= 0 && y >= 0 && x < w && y < h) &&
-               (*(uint8_t *)lv_draw_buf_goto_xy(&draw_buf, x, y)) == 0;
+               (*(uint8_t *)lv_draw_buf_goto_xy(&draw_buf, x, y)) < 128;
     }
 
     if (lv_snapshot_take_to_draw_buf(screen, LV_COLOR_FORMAT_RGB888, &draw_buf) != LV_RES_INV) {
