@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-
     parser = ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument(
         "images", nargs="+", type=Path, help="filenames for images to convert"
@@ -54,18 +53,27 @@ def main():
         px_to_index = {px: i for i, px in enumerate(sorted(set(pixels)))}
         color_count = len(px_to_index)
 
-        bit_count = max(1, ceil(log2(color_count)))
-        if bit_count not in (1, 2, 4, 8):
+        min_bit_count = max(1, ceil(log2(color_count)))
+        actual_bit_count = max(1, 2 ** ceil(log2(min_bit_count)))
+        if actual_bit_count not in (1, 2, 4, 8):
             raise ValueError(f"cannot handle {color_count} colors")
 
         indexed_pixels = bytearray(px_to_index[px] for px in pixels)
         palette = sorted(px_to_index, key=px_to_index.__getitem__)
 
         name = args.name.format(name=path.stem)
-        name = re.sub(r"[^a-z0-9_]", "_", name, flags=re.I)
-        logger.info("generating %r from %r (%d colors)", name, path.name, color_count)
+        name = re.sub(r"[^a-z0-9_]", "_", name, flags=re.IGNORECASE)
+        logger.info(
+            "generating %r from %r (%d colors: %s)",
+            name,
+            path.name,
+            color_count,
+            ", ".join(map(format_hex_rgba, px_to_index)),
+        )
 
-        code = format_indexed_template(name, bit_count, palette, indexed_pixels, size)
+        code = format_indexed_template(
+            name, actual_bit_count, palette, indexed_pixels, size
+        )
         print(code, file=out)
 
 
@@ -160,7 +168,7 @@ def read_rgba_bitmap(
     convert_cmd = (
         "convert",
         str(path),
-        *(["-negate"] if negate else []),
+        *(["-channel", "RGB", "-negate"] if negate else []),
         *("-rotate", str(90 * rotate90)),
         *("-depth", "8"),
         "rgba:-",
@@ -179,6 +187,14 @@ def chunk_by(n: int, iterable: Iterable[T], fillvalue: T):
     """Iterate by chunks of `n` values, padding last group with `fillvalue` if needed.
     `chunk_by(3, range(7), 9)` -> `(0, 1, 2), (3, 4, 5), (6, 9, 9)`"""
     return zip_longest(*([iter(iterable)] * n), fillvalue=fillvalue)
+
+
+def format_hex_rgba(rgba: tuple[int, int, int, int]):
+    r, g, b, a = rgba
+    if a == 255:
+        return f"#{r:02x}{g:02x}{b:02x}"
+    else:
+        return f"#{r:02x}{g:02x}{b:02x}{a:02x}"
 
 
 if __name__ == "__main__":

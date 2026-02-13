@@ -1,3 +1,4 @@
+from colorsys import hsv_to_rgb
 import subprocess
 import sys
 from pathlib import Path
@@ -21,8 +22,14 @@ def test_main_basic():
 
     assert returncode == 0
     assert stdout == (DIR / "test-imgs1.h").read_text()
-    assert "generating 'img_test_img1' from 'test-img1.png' (2 colors)" in stderr
-    assert "generating 'img_test_img2' from 'test-img2.png' (3 colors)" in stderr
+    assert (
+        "generating 'img_test_img1' from 'test-img1.png' (2 colors: #000000, #ffffff)"
+        in stderr
+    )
+    assert (
+        "generating 'img_test_img2' from 'test-img2.png' (3 colors: #00000000, #222034, #9badb7)"
+        in stderr
+    )
 
 
 def test_main_invert_rotate():
@@ -34,28 +41,37 @@ def test_main_invert_rotate():
         "--rotate=90",
     )
     Path("/tmp/test-imgs2.h").write_text(stdout)
-
+    print(stderr)
     assert returncode == 0
     assert stdout == (DIR / "test-imgs2.h").read_text()
-    assert "generating 'img_test_img1' from 'test-img1.png' (2 colors)" in stderr
-    assert "generating 'img_test_img2' from 'test-img2.png' (3 colors)" in stderr
+    assert (
+        "generating 'img_test_img1' from 'test-img1.png' (2 colors: #000000, #ffffff)"
+        in stderr
+    )
+    assert (
+        "generating 'img_test_img2' from 'test-img2.png' (3 colors: #645248, #dddfcb, #ffffff00)"
+        in stderr
+    )
 
 
 def test_main_too_many_colors():
-    PGM = (
-        b"P2 10 2 19",
-        b" 0  1  2  3  4  5  6  7  8  9",
-        b"10 11 12 13 14 15 16 17 18 19",
-        b"",
-    )
+    def ppm(w: int, h: int):
+        yield f"P3 {w} {h} 255"
+        n = w * h
+        for i in range(n):
+            r, g, b = (int(round(v * 255)) for v in hsv_to_rgb(i / n, 1, 1))
+            yield f"{r} {g} {b}"
+        yield ''
+
     with TemporaryDirectory() as tmp_dir:
-        pgm = Path(tmp_dir) / "test3.pgm"
-        pgm.write_bytes(b"\n".join(PGM))
+        pgm = Path(tmp_dir) / "test3.ppm"
+        pgm.write_text("\n".join(ppm(20,13)))
 
         _stdout, stderr, returncode = run_main(pgm)
 
+        print(stderr)
         assert returncode != 0
-        assert "cannot handle 20 colors" in stderr
+        assert "cannot handle 260 colors" in stderr
 
 
 def run_main(*args: Any):
