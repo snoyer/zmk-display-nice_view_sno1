@@ -80,7 +80,7 @@ def main():
             print(WARNING, key, "(no reference)")
 
         TMP = Path(gettempdir())
-        collated_im.save(TMP / f" snapshots{key}.png")
+        collated_im.save(TMP / f"snapshots{key}.png")
         apply_pixel_grid(collated_im).save(TMP / f"snapshots{key}.diff.png")
 
     return 0 if success else 1
@@ -95,7 +95,7 @@ def image_diff(new_im: Image.Image, old_im: Image.Image):
     new_data = cast(Iterable[int], new_im.convert("L").getdata())
     for i, (old_px, new_px) in enumerate(zip(old_data, new_data)):
         if old_px != new_px:
-            color = (0, 0, 255, 255) if new_px > old_px else (255, 0, 0, 255)
+            color = (155, 155, 255, 255) if new_px > old_px else (100, 0, 0, 255)
             diff.putpixel((i % w, i // w), color)
             diff_count += 1
 
