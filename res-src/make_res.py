@@ -39,6 +39,7 @@ def make_res(RES_SRC: Path, RES: Path):
         "endpoint-ble-ok": ("ble", f"{ble}/{ble}"),
         "endpoint-ble-na": ("ble", (f"{ble}/{ble}", f"{ble}/bar")),
         "endpoint-ble-open": ("ble", (f"{ble}/{ble}", f"{ble}/open")),
+        "endpoint-none": ("out-none", 'out-none'),
         "battery": ("battery", "battery/battery"),
         "battery-dither-mask": ("battery", "battery/dither-mask"),
         "battery-bolt": ("battery-bolt", "battery/bolt"),
