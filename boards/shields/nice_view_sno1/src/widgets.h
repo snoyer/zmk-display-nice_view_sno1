@@ -40,6 +40,7 @@ void battery_widget_update(struct widget *widget, const struct batteries_state *
 enum ble_profile_state { BLE_OPEN, BLE_CONNECTED, BLE_BOUND };
 struct output_state {
     struct zmk_endpoint_instance selected_endpoint;
+    struct zmk_endpoint_instance preferred_endpoint;
     int active_profile_index;
     enum ble_profile_state profile_statuses[CONFIG_TRACKED_PROFILE_COUNT];
     enum zmk_usb_conn_state usb_state;

@@ -39,11 +39,9 @@ def make_res(RES_SRC: Path, RES: Path):
         "endpoint-ble-ok": ("ble", f"{ble}/{ble}"),
         "endpoint-ble-na": ("ble", (f"{ble}/{ble}", f"{ble}/bar")),
         "endpoint-ble-open": ("ble", (f"{ble}/{ble}", f"{ble}/open")),
-        "endpoint-dither": ("usb", "usb/dither"),
         "battery": ("battery", "battery/battery"),
-        "battery-dither": ("battery", "battery/bolt-dither"),
+        "battery-dither-mask": ("battery", "battery/dither-mask"),
         "battery-bolt": ("battery-bolt", "battery/bolt"),
-        "battery-na": ("battery", ("battery/battery", "battery/dither")),
         "zmk": ("zmk", ("zmk", "bg")),
         **{f"n{i}": (f"n{i}", "big-digits") for i in range(10)},
     }.items():
