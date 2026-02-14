@@ -25,3 +25,5 @@ lv_draw_rect_dsc_t init_rect_dsc(lv_color_t bg_color);
 void draw_rect(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, lv_coord_t w, lv_coord_t h,
                lv_draw_rect_dsc_t *draw_dsc);
 void draw_img(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src);
+void draw_img2(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src,
+               bool greyed_out);

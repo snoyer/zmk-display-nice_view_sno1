@@ -91,9 +91,9 @@ void battery_widget_update(struct widget *widget, const struct batteries_state *
         const int charge_h = (bat->percentage / 100.) * charge_h_max;
         draw_rect(&layer, x + 4, y + 3, w - 8, charge_h, &rect_dsc_fg);
 
-        draw_img(&layer, x, y, bat->percentage <= 0 ? &icon_battery_na : &icon_battery);
+        draw_img2(&layer, x, y, &icon_battery, bat->percentage <= 0);
         if (bat->power_state == BAT_CHARGING || bat->power_state == BAT_POWERED)
-            draw_img(&layer, x, y, &icon_battery_dither);
+            draw_img(&layer, x, y, &icon_battery_dither_mask);
         if (bat->power_state == BAT_CHARGING) {
             const int x2 = x + (w - icon_battery_bolt.header.w) / 2;
             const int y2 = y + (h - icon_battery_bolt.header.h) / 2;
@@ -125,52 +125,46 @@ void output_widget_update(struct widget *widget, const struct output_state *stat
     lv_layer_t layer;
     lv_canvas_init_layer(widget->obj, &layer);
 
-    void show_icon(const lv_img_dsc_t *img, int x, int y) {
+    void show_icon(const lv_img_dsc_t *img, int x, int y, bool active) {
         const int dx = OUTPUT_WIDGET_W / 2 - img->header.w / 2;
         const int dy = OUTPUT_WIDGET_H / 2 - img->header.h / 2;
-        draw_img(&layer, x + dx, y + dy, img);
+        draw_img2(&layer, x + dx, y + dy, img, active);
     }
 
     void show_usb_icon(int y) {
+        const bool active = state->selected_endpoint.transport == ZMK_TRANSPORT_USB;
         const lv_img_dsc_t *usb_icon =
             state->usb_state == ZMK_USB_CONN_HID ? &icon_endpoint_usb_ok : &icon_endpoint_usb_na;
-        show_icon(usb_icon, 0, y);
+        show_icon(usb_icon, 0, y, !active);
     }
 
     void show_ble_icon(int y) {
+        const bool active = state->selected_endpoint.transport == ZMK_TRANSPORT_BLE;
         const enum ble_profile_state status = state->profile_statuses[state->active_profile_index];
         const lv_img_dsc_t *ble_icon = status == BLE_CONNECTED ? &icon_endpoint_ble_ok
                                        : status == BLE_BOUND   ? &icon_endpoint_ble_na
                                                                : &icon_endpoint_ble_open;
-        show_icon(ble_icon, 0, y);
+        show_icon(ble_icon, 0, y, !active);
 
         const int x = ble_icon->header.w / 2;
         int y2 = y + ble_icon->header.h / 2 - 1;
         for (int num = state->active_profile_index + 1; num > 0; num /= 10) {
             const lv_img_dsc_t *num_icon = digit_imgs[num % 10];
-            show_icon(num_icon, x - num_icon->header.w / 2, y2 - num_icon->header.h / 2);
-            y2 -= num_icon->header.h - 1;
+            show_icon(num_icon, x - num_icon->header.w / 2, y2 - num_icon->header.h / 2, !active);
+            y2 -= num_icon->header.h - 2;
         }
     }
 
     const int y_usb = -13;
     const int y_ble = +13;
     switch (state->selected_endpoint.transport) {
-    case ZMK_TRANSPORT_USB: // draw USB over greyed-out BLE
+    case ZMK_TRANSPORT_USB: // draw USB over BLE
         show_ble_icon(y_ble);
-        show_icon(&icon_endpoint_dither, 0, y_ble);
         show_usb_icon(y_usb);
         break;
-    case ZMK_TRANSPORT_BLE: // draw BLE over greyed-out USB
+    default: // draw BLE over USB
         show_usb_icon(y_usb);
-        show_icon(&icon_endpoint_dither, 0, y_usb);
         show_ble_icon(y_ble);
-        break;
-    default: // draw both greyed-out
-        show_usb_icon(y_usb);
-        show_icon(&icon_endpoint_dither, 0, y_usb);
-        show_ble_icon(y_ble);
-        show_icon(&icon_endpoint_dither, 0, y_ble);
         break;
     }
 

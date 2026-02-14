@@ -63,7 +63,11 @@ void canvas_draw_text_90(lv_obj_t *canvas, lv_coord_t x0, lv_coord_t y0, lv_coor
                 const int dst_x = x0 + dst_w - y - 1;
                 const int dst_y = y0 + x;
                 uint8_t *dst_px = lv_draw_buf_goto_xy(dst_draw_buf, dst_x, dst_y);
+#if IS_ENABLED(CONFIG_NICE_VIEW_WIDGET_INVERTED)
+                *dst_px = 255;
+#else
                 *dst_px = 0;
+#endif
             }
         }
     }
@@ -92,8 +96,21 @@ void draw_rect(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, lv_coord_t w, lv_c
 }
 
 void draw_img(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src) {
+    draw_img2(layer, x, y, src, false);
+}
+
+void draw_img2(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src,
+               bool greyed_out) {
     lv_draw_image_dsc_t img_dsc;
     lv_draw_image_dsc_init(&img_dsc);
+
+    img_dsc.recolor = LVGL_BG;
+#if IS_ENABLED(CONFIG_NICE_VIEW_WIDGET_INVERTED)
+    img_dsc.recolor_opa = greyed_out ? 126 : 0;
+#else
+    img_dsc.recolor_opa = greyed_out ? 127 : 0;
+#endif
+
     img_dsc.src = src;
     lv_area_t coords = {x, y, x + src->header.w - 1, y + src->header.h - 1};
     lv_draw_image(layer, &img_dsc, &coords);
