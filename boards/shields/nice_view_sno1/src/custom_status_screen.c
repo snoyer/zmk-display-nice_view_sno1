@@ -41,15 +41,6 @@ struct widget_set widgets;
     static void listener##_update_cb(state_type state) { update_func(&widgets, state); }           \
     ZMK_DISPLAY_WIDGET_LISTENER(listener, state_type, listener##_update_cb, data_func)
 
-struct zmk_endpoint_instance user_selected_endpoint(void) {
-#if IS_ENABLED(CONFIG_ZMK_ENDPOINT_DISABLE_FALLBACK)
-    // https://github.com/zmkfirmware/zmk/pull/2572
-    return zmk_endpoints_preferred();
-#else
-    return zmk_endpoints_selected();
-#endif
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 void setup_splash_screen(lv_obj_t *screen) {
@@ -166,7 +157,8 @@ static void update_output_state(struct widget_set *widgets, const struct output_
 
 static struct output_state get_output_listener_data(const zmk_event_t *event) {
     struct output_state state = {
-        .selected_endpoint = user_selected_endpoint(),
+        .selected_endpoint = zmk_endpoint_get_selected(),
+        .preferred_endpoint = zmk_endpoint_get_preferred(),
         .active_profile_index = zmk_ble_active_profile_index(),
 #if IS_ENABLED(CONFIG_USB_DEVICE_STACK)
         .usb_state = zmk_usb_get_conn_state(),

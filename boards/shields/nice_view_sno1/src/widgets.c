@@ -155,9 +155,19 @@ void output_widget_update(struct widget *widget, const struct output_state *stat
         }
     }
 
+    void show_none_icon(int y) {
+        const bool active = state->selected_endpoint.transport == ZMK_TRANSPORT_NONE;
+        show_icon(&icon_endpoint_none, 0, 0, !active);
+    }
+
     const int y_usb = -13;
     const int y_ble = +13;
-    switch (state->selected_endpoint.transport) {
+    switch (state->preferred_endpoint.transport) {
+    case ZMK_TRANSPORT_NONE: // draw NONE over USB over BLE
+        show_ble_icon(y_ble);
+        show_usb_icon(y_usb);
+        show_none_icon(0);
+        break;
     case ZMK_TRANSPORT_USB: // draw USB over BLE
         show_ble_icon(y_ble);
         show_usb_icon(y_usb);

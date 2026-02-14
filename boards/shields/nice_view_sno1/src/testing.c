@@ -19,7 +19,8 @@ struct demo_state get_demo_state(int step) {
             .group = "random",
             .output_state = {.usb_state = rand() % 2 ? ZMK_USB_CONN_HID : ZMK_USB_CONN_POWERED,
                              .active_profile_index = rand() % CONFIG_TRACKED_PROFILE_COUNT,
-                             .selected_endpoint.transport = rand() % 2},
+                             .selected_endpoint.transport = rand() % 2 + 1,
+                             .preferred_endpoint.transport = rand() % 2 + 1},
             .locks_state = {rand() % 3, rand() % 3, rand() % 3},
         };
         for (int j = 0; j < CONFIG_TRACKED_PROFILE_COUNT; ++j)
