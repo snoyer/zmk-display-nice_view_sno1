@@ -96,10 +96,10 @@ void draw_rect(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, lv_coord_t w, lv_c
 }
 
 void draw_img(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src) {
-    draw_img2(layer, x, y, src, false);
+    draw_dithered_img(layer, x, y, src, false);
 }
 
-void draw_img2(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src,
+void draw_dithered_img(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src,
                bool greyed_out) {
     lv_draw_image_dsc_t img_dsc;
     lv_draw_image_dsc_init(&img_dsc);

@@ -91,7 +91,7 @@ void battery_widget_update(struct widget *widget, const struct batteries_state *
         const int charge_h = (bat->percentage / 100.) * charge_h_max;
         draw_rect(&layer, x + 4, y + 3, w - 8, charge_h, &rect_dsc_fg);
 
-        draw_img2(&layer, x, y, &icon_battery, bat->percentage <= 0);
+        draw_dithered_img(&layer, x, y, &icon_battery, bat->percentage <= 0);
         if (bat->power_state == BAT_CHARGING || bat->power_state == BAT_POWERED)
             draw_img(&layer, x, y, &icon_battery_dither_mask);
         if (bat->power_state == BAT_CHARGING) {
@@ -125,10 +125,10 @@ void output_widget_update(struct widget *widget, const struct output_state *stat
     lv_layer_t layer;
     lv_canvas_init_layer(widget->obj, &layer);
 
-    void show_icon(const lv_img_dsc_t *img, int x, int y, bool active) {
+    void show_icon(const lv_img_dsc_t *img, int x, int y, bool greyed_out) {
         const int dx = OUTPUT_WIDGET_W / 2 - img->header.w / 2;
         const int dy = OUTPUT_WIDGET_H / 2 - img->header.h / 2;
-        draw_img2(&layer, x + dx, y + dy, img, active);
+        draw_dithered_img(&layer, x + dx, y + dy, img, greyed_out);
     }
 
     void show_usb_icon(int y) {
