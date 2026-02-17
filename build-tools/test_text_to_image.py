@@ -31,11 +31,12 @@ def test_text_to_image(args: list[str], expected: bytes):
 
 def test_trim_bitmap():
     padded_bitmap = [
-        "00000",
-        "01110",
-        "01010",
-        "01110",
-        "00000",
+        "0000000000",
+        "0000000000",
+        "0001110000",
+        "0001010000",
+        "0001110000",
+        "0000000000",
     ]
     trimmed_bitmap = [
         "111",
@@ -43,6 +44,15 @@ def test_trim_bitmap():
         "111",
     ]
     assert text_to_image.trim_bitmap(padded_bitmap) == trimmed_bitmap
+
+
+def test_trim_bitmap_nop():
+    trimmed_bitmap = [
+        "111",
+        "101",
+        "111",
+    ]
+    assert text_to_image.trim_bitmap(trimmed_bitmap) == trimmed_bitmap
 
 
 def run_main(*args: Any):

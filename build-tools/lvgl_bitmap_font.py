@@ -286,8 +286,8 @@ def chunk_by(n: int, iterable: Iterable[T], fillvalue: T):
 
 
 def split_between(iterable: Iterable[T], between: Callable[[T, T], bool]):
-    """Split iterable between items that match the given predicate.
-    `split_between("abCDe", lambda a, b: a.isupper() != b.isupper())` -> `['a', 'b'], ['C', 'D'], ['e']`
+    """Split iterable between item pairs that match the given predicate.
+    `split_between("abCDeFG", lambda l, r: l.islower() and r.isupper()))` -> `[["a", "b"], ["C", "D", "e"], ["F", "G"]]`
     """
     it = iter(iterable)
     group: list[T] = []
