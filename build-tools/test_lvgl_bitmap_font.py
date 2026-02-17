@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 from typing import Any
 
 import lvgl_bitmap_font
-from lvgl_bitmap_font import LvFont, parse_char_ranges
+from lvgl_bitmap_font import LvFont, parse_char_ranges, split_between
 from pytest import mark, raises
 
 DIR = Path(__file__).parent
@@ -93,3 +93,18 @@ def test_parse_char_ranges(input: str, expected: list[range]):
 def test_parse_char_ranges_error():
     with raises(ValueError):
         list(parse_char_ranges("foo-bar"))
+
+
+def test_split_between():
+    split = split_between("abCDeFG", lambda a, b: a.islower() and b.isupper())
+    assert list(split) == [["a", "b"], ["C", "D", "e"], ["F", "G"]]
+
+
+def test_split_between_True():
+    split = split_between(range(5), lambda a, b: True)
+    assert list(split) == [[0], [1], [2], [3], [4]]
+
+
+def test_split_between_False():
+    split = split_between(range(5), lambda a, b: False)
+    assert list(split) == [[0, 1, 2, 3, 4]]
