@@ -32,14 +32,12 @@ void print_snapshot(lv_obj_t *screen) {
         LOG_INF("%dx%d lvgl snapshot...", w, h);
         for (int y = 0; y < h; y += 3) {
             char line[(MAX(DISPLAY_X_RES, DISPLAY_Y_RES) / 2 + 1) * 4] = {0};
-            char *line_i = line;
+            char *line_ = line;
             for (int x = 0; x < w; x += 2) {
                 const char *s = SEXTANTS[(get_px(x + 0, y + 0) << 5) + (get_px(x + 1, y + 0) << 4) +
                                          (get_px(x + 0, y + 1) << 3) + (get_px(x + 1, y + 1) << 2) +
                                          (get_px(x + 0, y + 2) << 1) + (get_px(x + 1, y + 2) << 0)];
-                while ((*line_i++ = *s++))
-                    ;
-                line_i--;
+                strncat(line_, s, 4);
             }
             printf("%s\n", line); // LOG_xxx() doesn't work, some characters get mangled
         }
