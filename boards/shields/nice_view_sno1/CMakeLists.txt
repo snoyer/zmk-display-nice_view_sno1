@@ -47,7 +47,7 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_WIDGET_STATUS
 
   text_to_image(${CMAKE_CURRENT_BINARY_DIR}/res/app-version.png
     "${SPLASHSCREEN_VERSION}"
-    ${CMAKE_CURRENT_SOURCE_DIR}/res/ter-u14b-mod.bdf 2
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/ter-u14b-mod.bdf 2 TRIM
   )
   execute_process(
     COMMAND git rev-parse --short HEAD
@@ -57,7 +57,7 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_WIDGET_STATUS
   )
   text_to_image(${CMAKE_CURRENT_BINARY_DIR}/res/git-hash.png
     "${SPLASHSCREEN_GIT_HASH}"
-    ${CMAKE_CURRENT_SOURCE_DIR}/res/ter-u12b-mod.bdf 1
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/ter-u12b-mod.bdf 1 TRIM
   )
   generate_lvgl_indexed_images(splash-icons.h
     MODE "black_white_alpha"
