@@ -1,6 +1,20 @@
 include(../../../build-tools/lvgl.cmake)
 include(../../../build-tools/text_to_image.cmake)
 
+
+if(CONFIG_DISPLAY_DEMO_MODE)
+  set(SPLASHSCREEN_VERSION "0.4.0")
+  set(SPLASHSCREEN_GIT_HASH "abcd123")
+else()
+  set(SPLASHSCREEN_VERSION "${APP_VERSION_STRING}")
+  execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}/..
+    OUTPUT_VARIABLE SPLASHSCREEN_GIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+endif()
+
 if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_WIDGET_STATUS
   AND (NOT CONFIG_ZMK_SPLIT OR CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
 )
@@ -32,7 +46,7 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_WIDGET_STATUS
   )
 
   text_to_image(${CMAKE_CURRENT_BINARY_DIR}/res/app-version.png
-    "${APP_VERSION_STRING}"
+    "${SPLASHSCREEN_VERSION}"
     ${CMAKE_CURRENT_SOURCE_DIR}/res/ter-u14b-mod.bdf 2
   )
   execute_process(
@@ -42,7 +56,7 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_WIDGET_STATUS
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
   text_to_image(${CMAKE_CURRENT_BINARY_DIR}/res/git-hash.png
-    "${GIT_HASH}"
+    "${SPLASHSCREEN_GIT_HASH}"
     ${CMAKE_CURRENT_SOURCE_DIR}/res/ter-u12b-mod.bdf 1
   )
   generate_lvgl_indexed_images(splash-icons.h

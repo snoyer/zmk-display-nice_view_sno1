@@ -261,7 +261,7 @@ ZMK_SUBSCRIPTION(hid_indicators_listener, zmk_hid_indicators_changed);
 
 static int demo_step = 0;
 void update_demo_state_cb(struct k_work *work) {
-    LOG_INF("demo_step = %d", demo_step);
+    LOG_DBG("demo_step = %d", demo_step);
     const struct demo_state demo_state = get_demo_state(demo_step++);
     LOG_INF("demo_stage = %s", demo_state.group);
     update_battery_state(&widgets, demo_state.batteries_state);
@@ -315,7 +315,7 @@ lv_obj_t *zmk_display_status_screen() {
 #if IS_ENABLED(CONFIG_DISPLAY_DEMO_MODE)
     srand(123);
     LOG_INF("CONFIG_TRACKED_PROFILE_COUNT = %d", CONFIG_TRACKED_PROFILE_COUNT);
-    k_timer_start(&demo_state_timer, K_MSEC(CONFIG_SPLASH_SCREEN_TIMEOUT), K_MSEC(1000));
+    k_timer_start(&demo_state_timer, K_MSEC(CONFIG_SPLASH_SCREEN_TIMEOUT - 500), K_MSEC(1000));
 #endif
 
     return splash_screen;
