@@ -52,11 +52,11 @@ void setup_splash_screen(lv_obj_t *screen) {
     lv_obj_t *version = lv_img_create(screen);
     lv_img_set_src(version, &icon_app_version);
     lv_obj_align(version, LV_ALIGN_CENTER,
-                 logo_offset - icon_zmk.header.w / 2 - icon_app_version.header.w / 2 - 4, 0);
+                 logo_offset - icon_zmk.header.w / 2 - icon_app_version.header.w / 2 - 6, 0);
 
     lv_obj_t *hash = lv_img_create(screen);
     lv_img_set_src(hash, &icon_git_hash);
-    lv_obj_align(hash, LV_ALIGN_LEFT_MID, 0, 0);
+    lv_obj_align(hash, LV_ALIGN_LEFT_MID, 2, 0);
 }
 
 void hide_splash_screen_cb(struct k_work *work) { lv_scr_load(main_screen); }
