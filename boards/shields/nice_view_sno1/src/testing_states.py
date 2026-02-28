@@ -7,7 +7,7 @@ from typing import Literal
 
 def demo_states(CONFIG_TRACKED_PROFILE_COUNT: int):
     g = "splash"
-    yield state(g, "ble", "ble", 1, 1, {})
+    yield state(g, "ble", "ble", 1, 1, {0: 1, 1: -1}, ("80+", "-1"), "NCs", "layer 1")
 
     g = "demo"
     yield state(g, "ble", "ble", 1, 1, {0: 1, 1: -1}, ("80+", "-1"), "NCs", "layer 1")
