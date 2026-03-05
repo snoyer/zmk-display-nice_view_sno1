@@ -21,10 +21,10 @@ choice ZMK_DISPLAY_STATUS_SCREEN
 endchoice
 
 config ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
-    imply NICE_VIEW_WIDGET_STATUS
+    imply NICE_VIEW_SNO1_STATUS
 
-config NICE_VIEW_WIDGET_STATUS
-#     bool "Custom nice!view status widget"
+config NICE_VIEW_SNO1_STATUS
+    bool "Custom `sno1` nice!view status widget"
     select LV_USE_IMAGE
     select LV_USE_CANVAS
 
