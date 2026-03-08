@@ -44,6 +44,9 @@ config SPLASH_SCREEN_TIMEOUT
     int "duration to show the splash screen for at startup (ms)"
     default 3000
 
+config USE_BT_ICON
+    bool "use BT icon instead of wireless icon"
+
 config DISPLAY_DEMO_MODE
     bool "cycle synthetic display states"
     select LV_USE_SNAPSHOT
