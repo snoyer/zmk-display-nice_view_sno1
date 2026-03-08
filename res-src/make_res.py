@@ -32,14 +32,16 @@ def main():
 
 def make_res(RES_SRC: Path, RES: Path):
 
-    ble = "wl"
     for out_fn, (slice, layer) in {
         "endpoint-usb-ok": ("usb", "usb/usb"),
         "endpoint-usb-na": ("usb", ("usb/usb", "usb/bar")),
-        "endpoint-ble-ok": ("ble", f"{ble}/{ble}"),
-        "endpoint-ble-na": ("ble", (f"{ble}/{ble}", f"{ble}/bar")),
-        "endpoint-ble-open": ("ble", (f"{ble}/{ble}", f"{ble}/open")),
-        "endpoint-none": ("out-none", 'out-none'),
+        "endpoint-wl-ok": ("wl", "wl/wl"),
+        "endpoint-wl-na": ("wl", ("wl/wl", "wl/bar")),
+        "endpoint-wl-open": ("wl", ("wl/wl", "wl/open")),
+        "endpoint-bt-ok": ("bt", "bt/bt"),
+        "endpoint-bt-na": ("bt", ("bt/bt", "bt/bar")),
+        "endpoint-bt-open": ("bt", ("bt/bt", "bt/open")),
+        "endpoint-none": ("out-none", "out-none"),
         "battery": ("battery", "battery/battery"),
         "battery-dither-mask": ("battery", "battery/dither-mask"),
         "battery-bolt": ("battery-bolt", "battery/bolt"),

@@ -141,9 +141,15 @@ void output_widget_update(struct widget *widget, const struct output_state *stat
     void show_ble_icon(int y) {
         const bool active = state->selected_endpoint.transport == ZMK_TRANSPORT_BLE;
         const enum ble_profile_state status = state->profile_statuses[state->active_profile_index];
-        const lv_img_dsc_t *ble_icon = status == BLE_CONNECTED ? &icon_endpoint_ble_ok
-                                       : status == BLE_BOUND   ? &icon_endpoint_ble_na
-                                                               : &icon_endpoint_ble_open;
+#if IS_ENABLED(CONFIG_USE_BT_ICON)
+        const lv_img_dsc_t *ble_icon = status == BLE_CONNECTED ? &icon_endpoint_bt_ok
+                                       : status == BLE_BOUND   ? &icon_endpoint_bt_na
+                                                               : &icon_endpoint_bt_open;
+#else
+        const lv_img_dsc_t *ble_icon = status == BLE_CONNECTED ? &icon_endpoint_wl_ok
+                                       : status == BLE_BOUND   ? &icon_endpoint_wl_na
+                                                               : &icon_endpoint_wl_open;
+#endif
         show_icon(ble_icon, 0, y, !active);
 
         const int x = ble_icon->header.w / 2;
