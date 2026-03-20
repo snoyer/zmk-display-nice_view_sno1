@@ -63,7 +63,8 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_SNO1_STATUS
     MODE "black_white_alpha"
     ROTATE 90
     INVERT ${CONFIG_NICE_VIEW_WIDGET_INVERTED}
-    IMAGES ${CMAKE_CURRENT_SOURCE_DIR}/res/zmk.png
+    IMAGES ${CMAKE_CURRENT_SOURCE_DIR}/res/zmk-logo.png
+           ${CMAKE_CURRENT_SOURCE_DIR}/res/zmk-txt.png
            ${CMAKE_CURRENT_BINARY_DIR}/res/app-version.png
            ${CMAKE_CURRENT_BINARY_DIR}/res/git-hash.png
     NAME "icon_{name}"

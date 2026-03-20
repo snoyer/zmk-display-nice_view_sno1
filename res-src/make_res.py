@@ -45,7 +45,8 @@ def make_res(RES_SRC: Path, RES: Path):
         "battery": ("battery", "battery/battery"),
         "battery-dither-mask": ("battery", "battery/dither-mask"),
         "battery-bolt": ("battery-bolt", "battery/bolt"),
-        "zmk": ("zmk", ("zmk", "bg")),
+        "zmk-txt": ("zmk-txt", "zmk-txt"),
+        "zmk-logo": ("zmk-logo", ("zmk-logo/logo", "zmk-logo/bg")),
         **{f"n{i}": (f"n{i}", "big-digits") for i in range(10)},
     }.items():
         aseprite_export(RES_SRC / "icons.ase", RES / f"{out_fn}.png", slice, layer)

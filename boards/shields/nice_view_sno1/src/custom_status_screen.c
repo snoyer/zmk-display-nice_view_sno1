@@ -44,15 +44,24 @@ struct widget_set widgets;
 ////////////////////////////////////////////////////////////////////////////////
 
 void setup_splash_screen(lv_obj_t *screen) {
-    lv_obj_t *logo = lv_img_create(screen);
-    lv_img_set_src(logo, &icon_zmk);
     const int logo_offset = 8;
+    const int logo_padding = 6;
+
+    lv_obj_t *logo = lv_img_create(screen);
+    lv_img_set_src(logo, &icon_zmk_logo);
     lv_obj_align(logo, LV_ALIGN_CENTER, logo_offset, 0);
+
+    lv_obj_t *txt = lv_img_create(screen);
+    lv_img_set_src(txt, &icon_zmk_txt);
+    lv_obj_align(
+        txt, LV_ALIGN_CENTER,
+        logo_offset + icon_zmk_logo.header.w / 2 + icon_zmk_txt.header.w / 2 + logo_padding, 0);
 
     lv_obj_t *version = lv_img_create(screen);
     lv_img_set_src(version, &icon_app_version);
-    lv_obj_align(version, LV_ALIGN_CENTER,
-                 logo_offset - icon_zmk.header.w / 2 - icon_app_version.header.w / 2 - 6, 0);
+    lv_obj_align(
+        version, LV_ALIGN_CENTER,
+        logo_offset - icon_zmk_logo.header.w / 2 - icon_app_version.header.w / 2 - logo_padding, 0);
 
     lv_obj_t *hash = lv_img_create(screen);
     lv_img_set_src(hash, &icon_git_hash);
