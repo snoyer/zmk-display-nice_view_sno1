@@ -41,6 +41,7 @@ void print_snapshot(lv_obj_t *screen) {
             }
             printf("%s\n", line); // LOG_xxx() doesn't work, some characters get mangled
         }
+        printf("\n"); // extra empty line to make it easier to parse the output
     } else {
         LOG_WRN("snapshot failed");
     }

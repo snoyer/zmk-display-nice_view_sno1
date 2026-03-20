@@ -27,10 +27,12 @@ def main():
     all_snapshots: list[Snapshot] = []
 
     for line in sys.stdin if not isatty(0) else [""]:
-        if im := snapshot_extractor(line):
+        if (im := snapshot_extractor(line)) and (
+            caption := varible_extractor.variables.get("demo_stage")
+        ):
             snapshot = Snapshot(
                 im,
-                caption=varible_extractor.variables.get("demo_stage", "1"),
+                caption=caption,
                 is_transition=not bool(
                     int(varible_extractor.variables.get("layout_done", "1"))
                 ),
@@ -147,7 +149,7 @@ class VariableExtractor:
 
     def __call__(self, line: str):
         if m := re.search(r"([\S=]+) *= *(.+)", line):
-            self.variables[m.group(1)] = m.group(2)
+            self.variables[m.group(1)] = m.group(2).strip()
 
 
 @dataclass
@@ -162,8 +164,8 @@ class SnapshotExtractor:
             self.snapshot_resolution = int(m.group(1)), int(m.group(2))
             self.snapshot_lines = []
             return snapshot
-        elif self.snapshot_lines is not None:
-            if line and line[0] in SEXTANTS:
+        elif self.snapshot_lines is not None and self.snapshot_resolution:
+            if len(self.snapshot_lines) < ceil(self.snapshot_resolution[1] / 3):
                 self.snapshot_lines.append(line)
                 return
             else:

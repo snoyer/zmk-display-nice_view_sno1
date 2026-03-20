@@ -68,7 +68,10 @@ void setup_splash_screen(lv_obj_t *screen) {
     lv_obj_align(hash, LV_ALIGN_LEFT_MID, 2, 0);
 }
 
-void hide_splash_screen_cb(struct k_work *work) { lv_scr_load(main_screen); }
+void hide_splash_screen_cb(struct k_work *work) {
+    LOG_DBG("demo_stage = ");
+    lv_scr_load(main_screen);
+}
 static K_WORK_DELAYABLE_DEFINE(hide_splash_screen_work, hide_splash_screen_cb);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -78,11 +81,15 @@ void update_layout_cb(struct k_work *work) {
     if (!layout_done)
         k_work_reschedule(CONTAINER_OF(work, struct k_work_delayable, work), K_MSEC(33));
 
-#if IS_ENABLED(CONFIG_DISPLAY_DEMO_MODE) && IS_ENABLED(CONFIG_BOARD_NATIVE_SIM)
-    LOG_INF("layout_done = %d", layout_done);
-    print_snapshot(lv_scr_act());
+#if IS_ENABLED(CONFIG_BOARD_NATIVE_SIM)
+    LOG_DBG("layout_done = %d", layout_done);
 #endif
 }
+
+#if IS_ENABLED(CONFIG_BOARD_NATIVE_SIM)
+static void display_draw_event_cb(lv_event_t *e) { print_snapshot(lv_scr_act()); }
+#endif
+
 static K_WORK_DELAYABLE_DEFINE(update_layout_work, update_layout_cb);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -270,9 +277,8 @@ ZMK_SUBSCRIPTION(hid_indicators_listener, zmk_hid_indicators_changed);
 
 static int demo_step = 0;
 void update_demo_state_cb(struct k_work *work) {
-    LOG_DBG("demo_step = %d", demo_step);
     const struct demo_state demo_state = get_demo_state(demo_step++);
-    LOG_INF("demo_stage = %s", demo_state.group);
+    LOG_DBG("demo_stage = %s", demo_state.group);
     update_battery_state(&widgets, demo_state.batteries_state);
     update_output_state(&widgets, demo_state.output_state);
     update_layer_state(&widgets, demo_state.layer_state);
@@ -321,6 +327,10 @@ lv_obj_t *zmk_display_status_screen() {
     lv_obj_add_style(splash_screen, &style, LV_PART_MAIN);
     lv_obj_add_style(main_screen, &style, LV_PART_MAIN);
 
+#if IS_ENABLED(CONFIG_BOARD_NATIVE_SIM)
+    lv_display_add_event_cb(lv_display_get_default(), display_draw_event_cb, LV_EVENT_REFR_READY,
+                            NULL);
+#endif
 #if IS_ENABLED(CONFIG_DISPLAY_DEMO_MODE)
     srand(123);
     LOG_INF("CONFIG_TRACKED_PROFILE_COUNT = %d", CONFIG_TRACKED_PROFILE_COUNT);
