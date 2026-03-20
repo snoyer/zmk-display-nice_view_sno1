@@ -46,6 +46,8 @@ def main():
 
     success = True
 
+    TMP = Path(gettempdir())
+
     for key, snapshots_by_caption in groupby(
         sorted(all_snapshots, key=lambda s: s.caption),
         key=lambda s: s.caption,
@@ -64,6 +66,8 @@ def main():
             nontransition_images, "LA", columns=columns, padding=padding
         )
 
+        collated_im.save(TMP / f"snapshots{key}.png")
+
         ref_path = Path(__file__).parent / "expected" / f"snapshots{key}.png"
         if ref_path.is_file():
             old_im = Image.open(ref_path).convert("LA")
@@ -79,8 +83,6 @@ def main():
         else:
             print(WARNING, key, "(no reference)")
 
-        TMP = Path(gettempdir())
-        collated_im.save(TMP / f"snapshots{key}.png")
         apply_pixel_grid(collated_im).save(TMP / f"snapshots{key}.diff.png")
 
     return 0 if success else 1
