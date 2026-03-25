@@ -76,8 +76,8 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_SNO1_STATUS
   zephyr_library_sources(src/drawing-util.c)
   zephyr_library_sources(src/widgets.c)
 
+  zephyr_library_sources_ifdef(CONFIG_PRINT_LVGL_SNAPSHOTS src/snapshot.c)
 
-  zephyr_library_sources_ifdef(CONFIG_DISPLAY_DEMO_MODE src/snapshot.c)
   zephyr_library_sources_ifdef(CONFIG_DISPLAY_DEMO_MODE src/testing.c)
 
   if(${CONFIG_DISPLAY_DEMO_MODE})

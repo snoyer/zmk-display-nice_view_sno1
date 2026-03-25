@@ -27,9 +27,12 @@ LOG_MODULE_REGISTER(sno, CONFIG_ZMK_LOG_LEVEL);
 #include "widgets.h"
 #include "splash-icons.h" // generated
 
+#if IS_ENABLED(CONFIG_PRINT_LVGL_SNAPSHOTS)
+#include "snapshot.h"
+#endif
+
 #if IS_ENABLED(CONFIG_DISPLAY_DEMO_MODE)
 #include "testing.h"
-#include "snapshot.h"
 #include <stdlib.h>
 #endif
 
@@ -80,13 +83,10 @@ void update_layout_cb(struct k_work *work) {
     const bool layout_done = update_main_screen_layout(&widgets);
     if (!layout_done)
         k_work_reschedule(CONTAINER_OF(work, struct k_work_delayable, work), K_MSEC(33));
-
-#if IS_ENABLED(CONFIG_BOARD_NATIVE_SIM)
     LOG_DBG("layout_done = %d", layout_done);
-#endif
 }
 
-#if IS_ENABLED(CONFIG_BOARD_NATIVE_SIM)
+#if IS_ENABLED(CONFIG_PRINT_LVGL_SNAPSHOTS)
 static void display_draw_event_cb(lv_event_t *e) { print_snapshot(lv_scr_act()); }
 #endif
 
@@ -327,10 +327,11 @@ lv_obj_t *zmk_display_status_screen() {
     lv_obj_add_style(splash_screen, &style, LV_PART_MAIN);
     lv_obj_add_style(main_screen, &style, LV_PART_MAIN);
 
-#if IS_ENABLED(CONFIG_BOARD_NATIVE_SIM)
+#if IS_ENABLED(CONFIG_PRINT_LVGL_SNAPSHOTS)
     lv_display_add_event_cb(lv_display_get_default(), display_draw_event_cb, LV_EVENT_REFR_READY,
                             NULL);
 #endif
+
 #if IS_ENABLED(CONFIG_DISPLAY_DEMO_MODE)
     srand(123);
     LOG_INF("CONFIG_TRACKED_PROFILE_COUNT = %d", CONFIG_TRACKED_PROFILE_COUNT);

@@ -51,4 +51,10 @@ config DISPLAY_DEMO_MODE
     bool "cycle synthetic display states"
     select LV_USE_SNAPSHOT
 
+config PRINT_LVGL_SNAPSHOTS
+    bool "print LVGL snapshots to stdout"
+    select LV_USE_SNAPSHOT
+    depends on BOARD_NATIVE_SIM
+    default y
+
 endif # SHIELD_NICE_VIEW_SNO1
