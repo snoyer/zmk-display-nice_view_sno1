@@ -6,10 +6,10 @@
 #endif
 
 
-#ifndef LV_ATTRIBUTE_IMG_IMG_TEST_IMG1
-#define LV_ATTRIBUTE_IMG_IMG_TEST_IMG1
+#ifndef LV_ATTRIBUTE_IMG_IMG_TEST_IMG_HELLO_2COLORS
+#define LV_ATTRIBUTE_IMG_IMG_TEST_IMG_HELLO_2COLORS
 #endif
-const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IMG_TEST_IMG1 uint8_t img_test_img1_map[] = {
+const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IMG_TEST_IMG_HELLO_2COLORS uint8_t img_test_img_hello_2colors_map[] = {
   0x00, 0x00, 0x00, 0xff, /* color #0 */
   0xff, 0xff, 0xff, 0xff, /* color #1 */
   0xff, 0xff, 0xfc,
@@ -24,7 +24,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IMG_TEST_
   0xff, 0xff, 0xfc,
   0xff, 0xff, 0xfc,
 };
-const lv_img_dsc_t img_test_img1 = {
+const lv_img_dsc_t img_test_img_hello_2colors = {
 #if LVGL_VERSION_MAJOR >= 9
   .header.cf = LV_COLOR_FORMAT_I1,
 #else
@@ -35,14 +35,14 @@ const lv_img_dsc_t img_test_img1 = {
   .header.w = 22,
   .header.h = 11,
   .data_size = 41,
-  .data = img_test_img1_map,
+  .data = img_test_img_hello_2colors_map,
 };
 
 
-#ifndef LV_ATTRIBUTE_IMG_IMG_TEST_IMG2
-#define LV_ATTRIBUTE_IMG_IMG_TEST_IMG2
+#ifndef LV_ATTRIBUTE_IMG_IMG_TEST_IMG_HELLO_3COLORS
+#define LV_ATTRIBUTE_IMG_IMG_TEST_IMG_HELLO_3COLORS
 #endif
-const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IMG_TEST_IMG2 uint8_t img_test_img2_map[] = {
+const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IMG_TEST_IMG_HELLO_3COLORS uint8_t img_test_img_hello_3colors_map[] = {
   0x00, 0x00, 0x00, 0x00, /* color #0 */
   0x22, 0x20, 0x34, 0xff, /* color #1 */
   0x9b, 0xad, 0xb7, 0xff, /* color #2 */
@@ -59,7 +59,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_IMG_TEST_
   0x2a, 0xaa, 0xaa, 0xaa, 0xaa, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
-const lv_img_dsc_t img_test_img2 = {
+const lv_img_dsc_t img_test_img_hello_3colors = {
 #if LVGL_VERSION_MAJOR >= 9
   .header.cf = LV_COLOR_FORMAT_I2,
 #else
@@ -70,6 +70,6 @@ const lv_img_dsc_t img_test_img2 = {
   .header.w = 22,
   .header.h = 11,
   .data_size = 82,
-  .data = img_test_img2_map,
+  .data = img_test_img_hello_3colors_map,
 };
 

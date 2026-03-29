@@ -6,6 +6,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 from itertools import cycle, islice, zip_longest
 from math import ceil, log2
 from pathlib import Path
+from textwrap import dedent
 from typing import Iterable, Literal, Sequence, TypeVar
 
 logger = logging.getLogger(__name__)
@@ -17,13 +18,14 @@ def main():
         "images", nargs="+", type=Path, help="filenames for images to convert"
     )
     parser.add_argument(
+        "-o",
         "--output",
         default="-",
         help='filename for generated LVGL code, or "-" for stdout',
     )
     parser.add_argument(
-        "--name",
-        default="{name}",
+        "--img-name",
+        default="img_{name}",
         help="format for the image variable name (default: %(default)s)",
     )
     parser.add_argument(
@@ -36,6 +38,28 @@ def main():
     parser.add_argument(
         "--invert", action="store_true", help="invert pixels' RGB values"
     )
+    seq_type_group = parser.add_mutually_exclusive_group()
+    seq_type_group.add_argument(
+        "--declare-seq-struct",
+        nargs="?",
+        const="img_dsc_seq",
+        help="name to declare a"
+        " `struct NAME { const unsigned int count; const lv_img_dsc_t *imgs[]; }`"
+        " for image sequences (default: %(const)s)",
+        metavar="NAME",
+    )
+    seq_type_group.add_argument(
+        "--use-seq-struct",
+        help="name of an extisting"
+        " `struct NAME { const unsigned int count; const lv_img_dsc_t *imgs[]; }`"
+        " for image sequences",
+        metavar="NAME",
+    )
+    parser.add_argument(
+        "--seq-name",
+        default="imgs_{name}",
+        help="format for image sequences names (default: %(default)s)",
+    )
 
     args = parser.parse_args()
 
@@ -44,6 +68,8 @@ def main():
     out = sys.stdout if args.output == "-" else open(args.output, "w")
 
     print(HEADER_TEMPLATE, file=out)
+
+    numbered_sequences: dict[str, list[str]] = {}
 
     for path in args.images:
         pixels, size = read_rgba_bitmap(
@@ -61,20 +87,52 @@ def main():
         indexed_pixels = bytearray(px_to_index[px] for px in pixels)
         palette = sorted(px_to_index, key=px_to_index.__getitem__)
 
-        name = args.name.format(name=path.stem)
-        name = re.sub(r"[^a-z0-9_]", "_", name, flags=re.IGNORECASE)
+        name = sanitize_variable_name(path.stem)
+        formatted_name = sanitize_variable_name(args.img_name.format(name=path.stem))
         logger.info(
-            "generating %r from %r (%d colors: %s)",
-            name,
+            "generating 'lv_img_dsc_t %s' from %r (%d colors: %s)",
+            formatted_name,
             path.name,
             color_count,
             ", ".join(map(format_hex_rgba, px_to_index)),
         )
 
         code = format_indexed_template(
-            name, actual_bit_count, palette, indexed_pixels, size
+            formatted_name, actual_bit_count, palette, indexed_pixels, size
         )
         print(code, file=out)
+
+        if m := re.match(r"(.+)\d+", name):
+            basename = m.group(1)
+            numbered_sequences.setdefault(basename, []).append(formatted_name)
+
+    if args.declare_seq_struct:
+        seq_type = args.declare_seq_struct
+        guard = f"_{seq_type}_STRUCT_".upper()
+        struct_def = f"""
+            #ifndef {guard}
+            #define {guard}
+            struct {seq_type} {{
+            const unsigned int count;
+            const lv_img_dsc_t *imgs[];
+            }};
+            #endif  // {guard}
+            """
+        print(dedent(struct_def), file=out)
+    elif args.use_seq_struct:
+        seq_type = args.use_seq_struct
+    else:
+        seq_type = None
+
+    if seq_type and numbered_sequences:
+        for basename, names in numbered_sequences.items():
+            basename = args.seq_name.format(name=basename)
+            count = len(names)
+            logger.info("generating '%s %s' (%d items)", seq_type, basename, count)
+            print(f"const struct {seq_type} {basename} = {{{count}, {{", file=out)
+            for name in sorted(names):
+                print(f"  &{name},", file=out)
+            print("}};", file=out)
 
 
 ## LVGL code generation ########################################################
@@ -149,6 +207,10 @@ def pack_indexed_n_bit(bit_count: Literal[1, 2, 4, 8], pixels: Iterable[int], w:
         for row in chunk_by(w, pixels, 0)
         for vs in chunk_by(8 // bit_count, row, 0)
     )
+
+
+def sanitize_variable_name(name: str):
+    return re.sub(r"[^a-z0-9_]", "_", name, flags=re.IGNORECASE)
 
 
 ## image IO ####################################################################
