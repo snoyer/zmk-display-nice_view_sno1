@@ -102,7 +102,7 @@ def main():
         )
         print(code, file=out)
 
-        if m := re.match(r"(.+)\d+", name):
+        if m := re.match(r"(.+?)\d+$", name):
             basename = m.group(1)
             numbered_sequences.setdefault(basename, []).append(formatted_name)
 
