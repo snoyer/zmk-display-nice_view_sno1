@@ -91,13 +91,20 @@ void locks_widget_update(struct widget *widget, const struct locks_state *state)
         widget.w = W;                                                                              \
         widget.x = WIDGET_DUMMY_POS_VAL;                                                           \
     }
+#define OBJ_WIDGET_INIT(parent, widget, W, H)                                                      \
+    {                                                                                              \
+        widget.obj = lv_obj_create(parent);                                                        \
+        lv_obj_set_size(widget.obj, W, H);                                                         \
+        widget.w = W;                                                                              \
+        widget.x = WIDGET_DUMMY_POS_VAL;                                                           \
+    }
 
 struct widget_set {
     struct widget batteries_widget;
     lv_color_t batteries_widget_buf[WIDGET_BUF_SIZE(BATTERY_WIDGET_W, BATTERY_WIDGET_H)];
 
     struct widget output_widget;
-    lv_color_t output_widget_buf[WIDGET_BUF_SIZE(OUTPUT_WIDGET_W, OUTPUT_WIDGET_H)];
+    // lv_color_t output_widget_buf[WIDGET_BUF_SIZE(OUTPUT_WIDGET_W, OUTPUT_WIDGET_H)];
 
     struct widget profiles_widget;
     lv_color_t profiles_widget_buf[WIDGET_BUF_SIZE(PROFILES_WIDGET_W, PROFILES_WIDGET_H)];

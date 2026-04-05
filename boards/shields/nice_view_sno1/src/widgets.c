@@ -10,7 +10,13 @@ LOG_MODULE_DECLARE(sno, CONFIG_ZMK_LOG_LEVEL);
 
 void setup_widgets(struct widget_set *widgets, lv_obj_t *screen) {
     CANVAS_WIDGET_INIT(screen, widgets->batteries_widget, BATTERY_WIDGET_W, BATTERY_WIDGET_H)
-    CANVAS_WIDGET_INIT(screen, widgets->output_widget, OUTPUT_WIDGET_W, OUTPUT_WIDGET_H)
+
+    OBJ_WIDGET_INIT(screen, widgets->output_widget, OUTPUT_WIDGET_W, OUTPUT_WIDGET_H)
+    lv_animimg_create(widgets->output_widget.obj);
+    lv_animimg_create(widgets->output_widget.obj);
+    lv_img_create(widgets->output_widget.obj);
+    lv_img_create(widgets->output_widget.obj);
+
     CANVAS_WIDGET_INIT(screen, widgets->profiles_widget, PROFILES_WIDGET_W, PROFILES_WIDGET_H)
     CANVAS_WIDGET_INIT(screen, widgets->layer_widget, LAYER_WIDGET_W, LAYER_WIDGET_H)
     CANVAS_WIDGET_INIT(screen, widgets->locks_widget, LOCKS_WIDGET_W, LOCKS_WIDGET_H)
@@ -116,75 +122,82 @@ void battery_widget_update(struct widget *widget, const struct batteries_state *
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const lv_img_dsc_t *digit_imgs[10] = {&icon_n0, &icon_n1, &icon_n2, &icon_n3, &icon_n4,
-                                      &icon_n5, &icon_n6, &icon_n7, &icon_n8, &icon_n9};
-
 void output_widget_update(struct widget *widget, const struct output_state *state) {
-    lv_canvas_fill_bg(widget->obj, LVGL_BG, LV_OPA_COVER);
+    const int y_usb = -13;
+    const int y_ble = +13;
 
-    lv_layer_t layer;
-    lv_canvas_init_layer(widget->obj, &layer);
-
-    void show_icon(const lv_img_dsc_t *img, int x, int y, bool greyed_out) {
-        const int dx = OUTPUT_WIDGET_W / 2 - img->header.w / 2;
-        const int dy = OUTPUT_WIDGET_H / 2 - img->header.h / 2;
-        draw_dithered_img(&layer, x + dx, y + dy, img, greyed_out);
+    void run_animation(lv_obj_t * animimg, const struct img_dsc_seq *imgs) {
+        const int frame_duration = 750;
+        lv_animimg_set_src(animimg, (const void **)imgs->imgs, imgs->count);
+        lv_animimg_set_duration(animimg, imgs->count * frame_duration);
+        lv_animimg_set_repeat_count(animimg, imgs->count > 1 ? LV_ANIM_REPEAT_INFINITE : 0);
+        lv_animimg_start(animimg);
     }
 
-    void show_usb_icon(int y) {
+    void show_usb_icon(lv_obj_t * animimg) {
         const bool active = state->selected_endpoint.transport == ZMK_TRANSPORT_USB;
-        const lv_img_dsc_t *usb_icon =
-            state->usb_state == ZMK_USB_CONN_HID ? &icon_endpoint_usb_ok : &icon_endpoint_usb_na;
-        show_icon(usb_icon, 0, y, !active);
+        const struct img_dsc_seq *a =
+            state->usb_state == ZMK_USB_CONN_HID ? &icons_endpoint_usb_ok : &icons_endpoint_usb_na;
+        run_animation(animimg, a);
+        lv_obj_align(animimg, LV_ALIGN_CENTER, 0, y_usb);
+        apply_greyout_dither_style(animimg, active);
     }
 
-    void show_ble_icon(int y) {
+    void show_ble_icon(lv_obj_t * animimg, lv_obj_t * img) {
         const bool active = state->selected_endpoint.transport == ZMK_TRANSPORT_BLE;
         const enum ble_profile_state status = state->profile_statuses[state->active_profile_index];
 #if IS_ENABLED(CONFIG_USE_BT_ICON)
-        const lv_img_dsc_t *ble_icon = status == BLE_CONNECTED ? &icon_endpoint_bt_ok
-                                       : status == BLE_BOUND   ? &icon_endpoint_bt_na
-                                                               : &icon_endpoint_bt_open;
+        const struct img_dsc_seq *a = status == BLE_CONNECTED ? &icons_endpoint_bt_ok
+                                      : status == BLE_BOUND   ? &icons_endpoint_bt_na
+                                                              : &icons_endpoint_bt_open;
 #else
-        const lv_img_dsc_t *ble_icon = status == BLE_CONNECTED ? &icon_endpoint_wl_ok
-                                       : status == BLE_BOUND   ? &icon_endpoint_wl_na
-                                                               : &icon_endpoint_wl_open;
+        const struct img_dsc_seq *a = status == BLE_CONNECTED ? &icons_endpoint_wl_ok
+                                      : status == BLE_BOUND   ? &icons_endpoint_wl_na
+                                                              : &icons_endpoint_wl_open;
 #endif
-        show_icon(ble_icon, 0, y, !active);
+        run_animation(animimg, a);
+        lv_obj_align(animimg, LV_ALIGN_CENTER, 0, y_ble);
+        apply_greyout_dither_style(animimg, active);
 
-        const int x = ble_icon->header.w / 2;
-        int y2 = y + ble_icon->header.h / 2 - 1;
-        for (int num = state->active_profile_index + 1; num > 0; num /= 10) {
-            const lv_img_dsc_t *num_icon = digit_imgs[num % 10];
-            show_icon(num_icon, x - num_icon->header.w / 2, y2 - num_icon->header.h / 2, !active);
-            y2 -= num_icon->header.h - 2;
+        const int profile_num = state->active_profile_index + 1;
+        if (profile_num < 10) {
+            const lv_img_dsc_t *num_icon = icons_n.imgs[profile_num % 10];
+            lv_img_set_src(img, num_icon);
+            lv_obj_align(img, LV_ALIGN_BOTTOM_RIGHT, 0, 2);
+            apply_greyout_dither_style(img, active);
+        } else {
+            lv_img_set_src(img, NULL);
         }
     }
-
-    void show_none_icon(int y) {
+    void show_none_icon(lv_obj_t * img) {
         const bool active = state->selected_endpoint.transport == ZMK_TRANSPORT_NONE;
-        show_icon(&icon_endpoint_none, 0, 0, !active);
+        lv_img_set_src(img, &icon_endpoint_none);
+        lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+        apply_greyout_dither_style(img, active);
     }
 
-    const int y_usb = -13;
-    const int y_ble = +13;
+    lv_obj_t *animg1 = lv_obj_get_child(widget->obj, 0);
+    lv_obj_t *animg2 = lv_obj_get_child(widget->obj, 1);
+    lv_obj_t *img1 = lv_obj_get_child(widget->obj, 2);
+    lv_obj_t *img2 = lv_obj_get_child(widget->obj, 3);
+
     switch (state->preferred_endpoint.transport) {
     case ZMK_TRANSPORT_NONE: // draw NONE over USB over BLE
-        show_ble_icon(y_ble);
-        show_usb_icon(y_usb);
-        show_none_icon(0);
+        show_ble_icon(animg1, img1);
+        show_usb_icon(animg2);
+        show_none_icon(img2);
         break;
     case ZMK_TRANSPORT_USB: // draw USB over BLE
-        show_ble_icon(y_ble);
-        show_usb_icon(y_usb);
+        show_ble_icon(animg1, img1);
+        show_usb_icon(animg2);
+        lv_img_set_src(img2, NULL);
         break;
     default: // draw BLE over USB
-        show_usb_icon(y_usb);
-        show_ble_icon(y_ble);
+        show_usb_icon(animg1);
+        show_ble_icon(animg2, img1);
+        lv_img_set_src(img2, NULL);
         break;
     }
-
-    lv_canvas_finish_layer(widget->obj, &layer);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

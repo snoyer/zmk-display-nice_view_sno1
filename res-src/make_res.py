@@ -32,15 +32,15 @@ def main():
 
 def make_res(RES_SRC: Path, RES: Path):
 
-    for out_fn, (slice, layer) in {
-        "endpoint-usb-ok": ("usb", "usb/usb"),
-        "endpoint-usb-na": ("usb", ("usb/usb", "usb/bar")),
-        "endpoint-wl-ok": ("wl", "wl/wl"),
-        "endpoint-wl-na": ("wl", ("wl/wl", "wl/bar")),
-        "endpoint-wl-open": ("wl", ("wl/wl", "wl/open")),
-        "endpoint-bt-ok": ("bt", "bt/bt"),
-        "endpoint-bt-na": ("bt", ("bt/bt", "bt/bar")),
-        "endpoint-bt-open": ("bt", ("bt/bt", "bt/open")),
+    for out_fn, (slice, layer, *extras) in {
+        "endpoint-usb-ok": ("usb", "usb/usb", 0),
+        "endpoint-usb-na": ("usb", ("usb/usb", "usb/bar"), 0),
+        "endpoint-wl-ok": ("wl", "wl/wl", 0),
+        "endpoint-wl-na": ("wl", ("wl/wl", "wl/bar"), 0),
+        "endpoint-wl-open": ("wl", ("wl/wl", "wl/open"), (0, 3)),
+        "endpoint-bt-ok": ("bt", "bt/bt", 0),
+        "endpoint-bt-na": ("bt", ("bt/bt", "bt/bar"), 0),
+        "endpoint-bt-open": ("bt", ("bt/bt", "bt/open"), (0, 3)),
         "endpoint-none": ("out-none", "out-none"),
         "battery": ("battery", "battery/battery"),
         "battery-dither-mask": ("battery", "battery/dither-mask"),
@@ -49,7 +49,10 @@ def make_res(RES_SRC: Path, RES: Path):
         "zmk-logo": ("zmk-logo", ("zmk-logo/logo", "zmk-logo/bg")),
         **{f"n{i}": (f"n{i}", "big-digits") for i in range(10)},
     }.items():
-        aseprite_export(RES_SRC / "icons.ase", RES / f"{out_fn}.png", slice, layer)
+        frame_range = extras[0] if extras else None
+        aseprite_export(
+            RES_SRC / "icons.ase", RES / f"{out_fn}.png", slice, layer, frame_range
+        )
 
     ####
 
@@ -57,7 +60,12 @@ def make_res(RES_SRC: Path, RES: Path):
     for out_fn, (slice, layer, chars, size) in {
         "profiles-xs.bdf": ("profiles-xs", "profiles-xs", profiles_chars, 12),
         "profiles-s.bdf": ("profiles-s", "profiles-s", profiles_chars, 14),
-        "indicators.bdf": ("locks", ("locks/icons", "locks/dither"), ["NCS", "ncs"], 18),
+        "indicators.bdf": (
+            "locks",
+            ("locks/icons", "locks/dither"),
+            ["NCS", "ncs"],
+            18,
+        ),
     }.items():
         with NamedTemporaryFile(suffix=".png") as tmp:
             aseprite_export(RES_SRC / "icons.ase", tmp.name, slice, layer)
@@ -203,6 +211,7 @@ def aseprite_export(
     output: Path | str,
     slice: str | None = None,
     layer: str | Iterable[str] | None = None,
+    frames: tuple[int, int] | int | str | None = None,
     aseprite: str | Path = "aseprite",
 ):
     output = Path(output)
@@ -215,6 +224,20 @@ def aseprite_export(
                 yield from ("--layer", single_layer)
         if slice:
             yield from ("--slice", slice)
+
+        if isinstance(frames, str):
+            yield from ("--frame-tag", frames)
+        else:
+            if isinstance(frames, tuple):
+                f0, f1 = frames
+            elif frames is not None:
+                f0, f1 = frames, frames
+                png_out = Path(png_out)
+                png_out = png_out.with_name(f"{png_out.stem}{f0}{png_out.suffix}")
+            else:
+                f0, f1 = 0, 0
+            yield from ("--frame-range", f"{f0},{f1}")
+
         yield from ("--save-as", png_out)
 
     subprocess.check_call(list(map(str, aseprite_command(output))))

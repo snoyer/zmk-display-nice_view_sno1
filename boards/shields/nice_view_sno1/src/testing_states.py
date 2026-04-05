@@ -1,8 +1,8 @@
-from argparse import ArgumentParser
 import re
+from argparse import ArgumentParser
 from itertools import cycle, islice, product
 from random import Random
-from typing import Literal
+from typing import Counter, Literal
 
 
 def demo_states(CONFIG_TRACKED_PROFILE_COUNT: int):
@@ -114,6 +114,18 @@ argparser = ArgumentParser()
 argparser.add_argument("--CONFIG_TRACKED_PROFILE_COUNT", type=int)
 args = argparser.parse_args()
 
+
+def fixed_demo_states():
+    counter = Counter()
+    for state in demo_states(args.CONFIG_TRACKED_PROFILE_COUNT):
+        if m := re.search(r'.group = "(.+)"', state):
+            g = m.group(1)
+            yield re.sub(r'.group = "(.+)"', rf'.group = "{g}#{counter[g]}"', state)
+            counter[g] += 1
+        else:
+            yield state
+
+
 print("struct demo_state test_states[] = {")
-print(",".join(demo_states(args.CONFIG_TRACKED_PROFILE_COUNT)))
+print(",".join(fixed_demo_states()))
 print("};")

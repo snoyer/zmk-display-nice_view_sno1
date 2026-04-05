@@ -42,7 +42,9 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_SNO1_STATUS
     ROTATE 90
     INVERT ${CONFIG_NICE_VIEW_WIDGET_INVERTED}
     IMAGES ${icon_pngs}
-    NAME "icon_{name}"
+    IMG_NAME "icon_{name}"
+    DECLARE_SEQ_STRUCT "img_dsc_seq"
+    SEQ_NAME "icons_{name}"
   )
 
   text_to_image(${CMAKE_CURRENT_BINARY_DIR}/res/app-version.png
@@ -67,7 +69,7 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_SNO1_STATUS
            ${CMAKE_CURRENT_SOURCE_DIR}/res/zmk-txt.png
            ${CMAKE_CURRENT_BINARY_DIR}/res/app-version.png
            ${CMAKE_CURRENT_BINARY_DIR}/res/git-hash.png
-    NAME "icon_{name}"
+    IMG_NAME "icon_{name}"
   )
 
   zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/include)

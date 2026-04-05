@@ -26,4 +26,5 @@ void draw_rect(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, lv_coord_t w, lv_c
                lv_draw_rect_dsc_t *draw_dsc);
 void draw_img(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src);
 void draw_dithered_img(lv_layer_t *layer, lv_coord_t x, lv_coord_t y, const lv_image_dsc_t *src,
-               bool greyed_out);
+                       bool greyed_out);
+void apply_greyout_dither_style(lv_obj_t *img, bool active);

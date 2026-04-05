@@ -72,7 +72,7 @@ void setup_splash_screen(lv_obj_t *screen) {
 }
 
 void hide_splash_screen_cb(struct k_work *work) {
-    LOG_DBG("demo_stage = ");
+    LOG_DBG("display state: ");
     lv_scr_load(main_screen);
 }
 static K_WORK_DELAYABLE_DEFINE(hide_splash_screen_work, hide_splash_screen_cb);
@@ -278,13 +278,13 @@ ZMK_SUBSCRIPTION(hid_indicators_listener, zmk_hid_indicators_changed);
 static int demo_step = 0;
 void update_demo_state_cb(struct k_work *work) {
     const struct demo_state demo_state = get_demo_state(demo_step++);
-    LOG_DBG("demo_stage = %s", demo_state.group);
+    LOG_DBG("display state: %s", demo_state.group);
     update_battery_state(&widgets, demo_state.batteries_state);
     update_output_state(&widgets, demo_state.output_state);
     update_layer_state(&widgets, demo_state.layer_state);
 
     num_lock_timeout_time = caps_lock_timeout_time = scroll_lock_timeout_time =
-        k_uptime_get() + 1000; // push back icons timeout so they don't get automatically hidden
+        k_uptime_get() + 3000; // push back icons timeout so they don't get automatically hidden
     update_hid_indicators_state(&widgets, demo_state.locks_state);
 
     k_work_reschedule(&update_locks_widget_work, K_MSEC(0));
@@ -335,7 +335,7 @@ lv_obj_t *zmk_display_status_screen() {
 #if IS_ENABLED(CONFIG_DISPLAY_DEMO_MODE)
     srand(123);
     LOG_INF("CONFIG_TRACKED_PROFILE_COUNT = %d", CONFIG_TRACKED_PROFILE_COUNT);
-    k_timer_start(&demo_state_timer, K_MSEC(CONFIG_SPLASH_SCREEN_TIMEOUT - 500), K_MSEC(1000));
+    k_timer_start(&demo_state_timer, K_MSEC(CONFIG_SPLASH_SCREEN_TIMEOUT - 500), K_MSEC(3000));
 #endif
 
     return splash_screen;

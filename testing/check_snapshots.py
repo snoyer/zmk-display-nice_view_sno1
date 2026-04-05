@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import re
+import shutil
 import sys
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from itertools import count, groupby
 from math import ceil
 from os import isatty
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Sequence, cast
+from typing import Counter, Sequence, cast
 
 from PIL import Image, ImageDraw, ImageOps
 
@@ -25,50 +26,82 @@ def main():
     varible_extractor = VariableExtractor()
 
     all_snapshots: list[Snapshot] = []
+    display_state = ""
 
     for line in sys.stdin if not isatty(0) else [""]:
-        if (im := snapshot_extractor(line)) and (
-            caption := varible_extractor.variables.get("demo_stage")
-        ):
+        print(line, end="")
+
+        timestamp_extractor(line)
+        varible_extractor(line)
+        snapshot_extractor(line)
+
+        for im in snapshot_extractor.pop_snapshot_images():
             snapshot = Snapshot(
-                im,
-                caption=caption,
+                ImageOps.invert(im.rotate(90, expand=True)),
                 is_transition=not bool(
                     int(varible_extractor.variables.get("layout_done", "1"))
                 ),
                 time=timestamp_extractor.seconds,
             )
-            all_snapshots.append(snapshot)
-        timestamp_extractor(line)
-        varible_extractor(line)
-        print(line, end="")
+            snapshot.state = display_state
+            if not all_snapshots or snapshot != all_snapshots[-1]:
+                print(snapshot)
+                all_snapshots.append(snapshot)
+
+        if m := re.search(r"prev display state:\s*(.*)", line):
+            if all_snapshots:
+                all_snapshots[-1].state = str(m.group(1))
+        elif m := re.search(r"display state:\s*(.*)", line):
+            display_state = str(m.group(1))
 
     columns = int(varible_extractor.variables.get("CONFIG_TRACKED_PROFILE_COUNT", 5))
     padding = 16
 
     success = True
 
-    TMP = Path(gettempdir())
+    TMP_DIR = Path(gettempdir())
+    ALL_SNAPSHOTS_DIR = TMP_DIR / "all-snapshots"
 
-    for key, snapshots_by_caption in groupby(
-        sorted(all_snapshots, key=lambda s: s.caption),
-        key=lambda s: s.caption,
-    ):
+    if ALL_SNAPSHOTS_DIR.is_dir():
+        shutil.rmtree(ALL_SNAPSHOTS_DIR)
+    ALL_SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    for i, s in enumerate(all_snapshots):
+        fn = (
+            ALL_SNAPSHOTS_DIR
+            / f"{i:04d}-{s.group}#{s.step}{'~' if s.is_transition else ''}.png"
+        )
+        s.image.save(fn)
+
+    counter = Counter()
+    for group, snapshots_by_group in groupby(all_snapshots, key=lambda s: s.group):
+        if not group:
+            continue
+
+        key = f"{group}({counter[group]})" if group in counter else group
+        counter[group] += 1
+
         if key and not key.startswith("["):
             key = f"[{key}]"
 
-        snapshots = [
-            next(same_snapshots)
-            for _, same_snapshots in groupby(
-                snapshots_by_caption, key=lambda s: (s.is_transition, s.image.tobytes())
-            )
-        ]
-        nontransition_images = [s.image for s in snapshots if not s.is_transition]
+        snapshots_by_step: list[list[Snapshot]] = []
+        for _step, snapshots in groupby(snapshots_by_group, key=lambda s: s.step):
+            snapshots = list(snapshots)
+            while snapshots and snapshots[0].is_transition:
+                snapshots.pop(0)
+            while snapshots and snapshots[-1].is_transition:
+                snapshots.pop(-1)
+            if snapshots:
+                t0 = snapshots[0].time
+                snapshots_by_step.append(
+                    [replace(s, time=s.time - t0) for s in snapshots]
+                )
+
+        nontransition_images = [snapshots[0].image for snapshots in snapshots_by_step]
         collated_im = collate_images(
             nontransition_images, "LA", columns=columns, padding=padding
         )
 
-        collated_im.save(TMP / f"snapshots{key}.png")
+        collated_im.save(TMP_DIR / f"snapshots{key}.png")
 
         ref_path = Path(__file__).parent / "expected" / f"snapshots{key}.png"
         if ref_path.is_file():
@@ -85,7 +118,7 @@ def main():
         else:
             print(WARNING, key, "(no reference)")
 
-        apply_pixel_grid(collated_im).save(TMP / f"snapshots{key}.diff.png")
+        apply_pixel_grid(collated_im).save(TMP_DIR / f"snapshots{key}.diff.png")
 
     return 0 if success else 1
 
@@ -140,7 +173,8 @@ class TimestampExtractor:
 
     @property
     def seconds(self):
-        return (self.timestamp - self.T0).seconds
+        d = self.timestamp - self.T0
+        return d.seconds + d.microseconds / 1_000_000
 
 
 @dataclass
@@ -148,63 +182,72 @@ class VariableExtractor:
     variables: dict[str, str] = field(default_factory=dict)
 
     def __call__(self, line: str):
-        if m := re.search(r"([\S=]+) *= *(.+)", line):
-            self.variables[m.group(1)] = m.group(2).strip()
+        for k, v in re.findall(r"([\S=]+)\s*=\s*(.+)", line):
+            self.variables[k] = v.strip()
 
 
 @dataclass
 class SnapshotExtractor:
-    snapshot_lines: list[str] | None = None
-    snapshot_resolution: tuple[int, int] | None = None
+    snapshot_images: list[Image.Image] = field(default_factory=list)
+    _tmp_image: Image.Image | None = None
+    _tmp_lines_remaining: int = 0
 
     def __call__(self, line: str):
         line = line.strip("\r\n")
         if m := re.search(r": (\d+)x(\d+) lvgl snapshot", line):
-            snapshot = self._save_snapshot()
-            self.snapshot_resolution = int(m.group(1)), int(m.group(2))
-            self.snapshot_lines = []
-            return snapshot
-        elif self.snapshot_lines is not None and self.snapshot_resolution:
-            if len(self.snapshot_lines) < ceil(self.snapshot_resolution[1] / 3):
-                self.snapshot_lines.append(line)
-                return
+            self._save_snapshot()
+            self._tmp_image = Image.new("L", (int(m.group(1)), int(m.group(2))))
+            self._tmp_lines_remaining = self._tmp_image.size[1]
+        elif self._tmp_image:
+            _w, h = self._tmp_image.size
+            if self._tmp_lines_remaining > 0:
+                im = image_from_sextants([line])
+                self._tmp_image.paste(im, (0, h - self._tmp_lines_remaining))
+                self._tmp_lines_remaining -= 3
             else:
-                snapshot = self._save_snapshot()
-                self.snapshot_resolution = None
-                self.snapshot_lines = None
-                return snapshot
+                self._save_snapshot()
+
+    def pop_snapshot_images(self):
+        ims = self.snapshot_images[:]
+        self.snapshot_images.clear()
+        return ims
 
     def _save_snapshot(self):
-        if self.snapshot_lines:
-            im = image_from_sextants(self.snapshot_lines, self.snapshot_resolution)
-            if self.snapshot_resolution and self.snapshot_resolution != im.size:
-                im = im.crop((0, 0, *self.snapshot_resolution))
-            im = im.rotate(90, expand=True)
-            im = ImageOps.invert(im)
-
-            self.snapshot_lines.clear()
-            return im
+        if im := self._tmp_image:
+            self.snapshot_images.append(im)
+        self._tmp_image = None
 
 
 @dataclass
 class Snapshot:
     image: Image.Image
-    caption: str = ""
+    group: str = ""
+    step: int = 0
     is_transition: bool = False
     time: float = 0.0
 
+    @property
+    def state(self):
+        return f"{self.group}#{self.step}"
 
-def bitmap_from_sextants(
+    @state.setter
+    def state(self, state: str):
+        if m := re.match(r"([^#]+)(#(\d+))?", state):
+            self.group = m.group(1)
+            self.step = int(m.group(3)) if m.group(2) else 0
+
+
+def image_from_sextants(
     lines: Sequence[str], expected_size: tuple[int, int] | None = None
 ):
-    a, b = 0, 255
+    fg, bg = 0, 255
 
     src_h, src_w = len(lines) * 3, max(map(len, lines)) * 2
     w, h = expected_size if expected_size else (src_w, src_h)
 
-    pixels = bytearray([0] * (w * h))
+    im = Image.new("1", (w, h), bg)
     for line, y in zip(lines, count(0, step=3)):
-        for c, x in zip(line, count(0, step=2)):
+        for c, x in zip(line.rstrip(), count(0, step=2)):
             i = SEXTANTS.index(c)
             for x2, y2, mask in [
                 (x + 0, y + 0, 0b100000),
@@ -215,17 +258,7 @@ def bitmap_from_sextants(
                 (x + 1, y + 2, 0b000001),
             ]:
                 if x2 < w and y2 < h:
-                    pixels[x2 + y2 * w] = a if i & mask else b
-    return pixels, (w, h)
-
-
-def image_from_sextants(
-    lines: Sequence[str], expected_size: tuple[int, int] | None = None
-):
-    pixels, (w, h) = bitmap_from_sextants(lines, expected_size)
-    im = Image.new("1", (w, h))
-    for i, v in enumerate(pixels):
-        im.putpixel((i % w, i // w), v)
+                    im.putpixel((x2, y2), fg if i & mask else bg)
     return im
 
 

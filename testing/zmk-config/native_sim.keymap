@@ -23,7 +23,10 @@
 
 &kscan {
     events = <
-        ZMK_MOCK_RELEASE(0,0,55*500)
+        ZMK_MOCK_RELEASE(0,0,64*500)
+        ZMK_MOCK_RELEASE(0,0,64*500)
+        ZMK_MOCK_RELEASE(0,0,64*500)
+        ZMK_MOCK_RELEASE(0,0,64*500)
         // no meaningful events, we'll have a demo mode cycling through synthetic states
     >;
 };
