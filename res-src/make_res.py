@@ -33,20 +33,20 @@ def main():
 def make_res(RES_SRC: Path, RES: Path):
 
     for out_fn, (slice, layer, *extras) in {
-        "endpoint-usb-ok": ("usb", "usb/usb", 0),
-        "endpoint-usb-na": ("usb", ("usb/usb", "usb/bar"), 0),
-        "endpoint-wl-ok": ("wl", "wl/wl", 0),
-        "endpoint-wl-na": ("wl", ("wl/wl", "wl/bar"), 0),
-        "endpoint-wl-open": ("wl", ("wl/wl", "wl/open"), (0, 3)),
-        "endpoint-bt-ok": ("bt", "bt/bt", 0),
-        "endpoint-bt-na": ("bt", ("bt/bt", "bt/bar"), 0),
-        "endpoint-bt-open": ("bt", ("bt/bt", "bt/open"), (0, 3)),
+        "endpoint-usb-ok": ("usb-ok", "usb", 1),
+        "endpoint-usb-na": ("usb-na", "usb", 1),
+        "endpoint-wl-ok": ("wl-ok", "wl", 1),
+        "endpoint-wl-na": ("wl-na", "wl", 1),
+        "endpoint-wl-open": ("wl-open", "wl", "wl-open"),
+        "endpoint-bt-ok": ("bt-ok", "bt", 1),
+        "endpoint-bt-na": ("bt-na", "bt", 1),
+        "endpoint-bt-open": ("bt-open", "bt", "bt-open"),
         "endpoint-none": ("out-none", "out-none"),
         "battery": ("battery", "battery/battery"),
         "battery-dither-mask": ("battery", "battery/dither-mask"),
         "battery-bolt": ("battery-bolt", "battery/bolt"),
-        "zmk-txt": ("zmk-txt", "zmk-txt"),
-        "zmk-logo": ("zmk-logo", ("zmk-logo/logo", "zmk-logo/bg")),
+        "zmk-txt": ("splash-title", "splash"),
+        "zmk-logo": ("splash-logo", "splash"),
         **{f"n{i}": (f"n{i}", "big-digits") for i in range(10)},
     }.items():
         frame_range = extras[0] if extras else None
