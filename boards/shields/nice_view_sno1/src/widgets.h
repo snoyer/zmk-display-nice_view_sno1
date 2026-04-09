@@ -83,20 +83,19 @@ void locks_widget_update(struct widget *widget, const struct locks_state *state)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define WIDGET_DUMMY_POS_VAL -123456
 #define CANVAS_WIDGET_INIT(parent, widget, W, H)                                                   \
     {                                                                                              \
         widget.obj = lv_canvas_create(parent);                                                     \
         lv_canvas_set_buffer(widget.obj, widget##_buf, W, H, WIDGET_BUF_FMT);                      \
         widget.w = W;                                                                              \
-        widget.x = WIDGET_DUMMY_POS_VAL;                                                           \
+        widget.x = 0;                                                                              \
     }
 #define OBJ_WIDGET_INIT(parent, widget, W, H)                                                      \
     {                                                                                              \
         widget.obj = lv_obj_create(parent);                                                        \
         lv_obj_set_size(widget.obj, W, H);                                                         \
         widget.w = W;                                                                              \
-        widget.x = WIDGET_DUMMY_POS_VAL;                                                           \
+        widget.x = 0;                                                                              \
     }
 
 struct widget_set {
@@ -104,7 +103,6 @@ struct widget_set {
     lv_color_t batteries_widget_buf[WIDGET_BUF_SIZE(BATTERY_WIDGET_W, BATTERY_WIDGET_H)];
 
     struct widget output_widget;
-    // lv_color_t output_widget_buf[WIDGET_BUF_SIZE(OUTPUT_WIDGET_W, OUTPUT_WIDGET_H)];
 
     struct widget profiles_widget;
     lv_color_t profiles_widget_buf[WIDGET_BUF_SIZE(PROFILES_WIDGET_W, PROFILES_WIDGET_H)];
@@ -118,4 +116,4 @@ struct widget_set {
 
 void setup_widgets(struct widget_set *widgets, lv_obj_t *screen);
 void update_main_screen_layout_targets(struct widget_set *widgets);
-bool update_main_screen_layout(struct widget_set *widgets);
+bool update_main_screen_layout(struct widget_set *widgets, int max_move);

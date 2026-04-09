@@ -80,10 +80,14 @@ static K_WORK_DELAYABLE_DEFINE(hide_splash_screen_work, hide_splash_screen_cb);
 ////////////////////////////////////////////////////////////////////////////////
 
 void update_layout_cb(struct k_work *work) {
-    const bool layout_done = update_main_screen_layout(&widgets);
+#if IS_ENABLED(CONFIG_WIDGET_LAYOUT_TRANSITION)
+    const bool layout_done = update_main_screen_layout(&widgets, 4);
     if (!layout_done)
         k_work_reschedule(CONTAINER_OF(work, struct k_work_delayable, work), K_MSEC(33));
     LOG_DBG("layout_done = %d", layout_done);
+#else
+    update_main_screen_layout(&widgets, 0);
+#endif
 }
 
 #if IS_ENABLED(CONFIG_PRINT_LVGL_SNAPSHOTS)

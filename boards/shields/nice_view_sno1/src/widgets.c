@@ -22,7 +22,7 @@ void setup_widgets(struct widget_set *widgets, lv_obj_t *screen) {
     CANVAS_WIDGET_INIT(screen, widgets->locks_widget, LOCKS_WIDGET_W, LOCKS_WIDGET_H)
 
     update_main_screen_layout_targets(widgets);
-    update_main_screen_layout(widgets);
+    update_main_screen_layout(widgets, 0);
 }
 
 void update_main_screen_layout_targets(struct widget_set *widgets) {
@@ -54,11 +54,12 @@ void update_main_screen_layout_targets(struct widget_set *widgets) {
     widgets->locks_widget.target_x = -x;
 }
 
-bool update_main_screen_layout(struct widget_set *widgets) {
+bool update_main_screen_layout(struct widget_set *widgets, int max_move) {
     bool update_pos(struct widget * widget) {
-        if (widget->x == WIDGET_DUMMY_POS_VAL)
+        if (max_move < 1)
             widget->x = widget->target_x;
-        widget->x += CLAMP(widget->target_x - widget->x, -4, +4);
+        else
+            widget->x += CLAMP(widget->target_x - widget->x, -max_move, +max_move);
         return widget->x == widget->target_x;
     }
 

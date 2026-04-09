@@ -50,7 +50,10 @@ config USE_BT_ICON
 
 config DISPLAY_DEMO_MODE
     bool "cycle synthetic display states"
-    select LV_USE_SNAPSHOT
+
+config WIDGET_LAYOUT_TRANSITION
+    bool "use smooth animated trasition to move widgets"
+    default y
 
 config PRINT_LVGL_SNAPSHOTS
     bool "print LVGL snapshots to stdout"
