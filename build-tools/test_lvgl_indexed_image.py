@@ -1,6 +1,6 @@
-from colorsys import hsv_to_rgb
 import subprocess
 import sys
+from colorsys import hsv_to_rgb
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from textwrap import dedent
@@ -63,6 +63,8 @@ def test_main_sequences_declare_struct():
             make_test_pgm(tmp / "a1.ppm", 0x000000, 0x000000, 0x000000),
             make_test_pgm(tmp / "a2.ppm", 0x000000, 0xFF0000, 0x000000),
             make_test_pgm(tmp / "a3.ppm", 0x000000, 0xFF0000, 0xFF0000),
+            make_test_pgm(tmp / "a4.ppm", 0x000000, 0xFF0000, 0x000000),
+            make_test_pgm(tmp / "a5.ppm", 0x000000, 0x000000, 0x000000),
             make_test_pgm(tmp / "b0.ppm", 0xFF0000, 0x00FF00, 0x0000FF),
             make_test_pgm(tmp / "b1.ppm", 0x00FF00, 0x0000FF, 0xFF0000),
             "--img-name=frame_{name}",
@@ -73,7 +75,7 @@ def test_main_sequences_declare_struct():
 
     assert returncode == 0
     assert stdout == (DIR / "test-imgs-declare_struct.h").read_text()
-    assert "generating 'img_dsc_seq frames_a' (3 items)" in stderr
+    assert "generating 'img_dsc_seq frames_a' (5 items)" in stderr
     assert "generating 'img_dsc_seq frames_b' (2 items)" in stderr
 
 

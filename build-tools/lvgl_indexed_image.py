@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import re
 import subprocess
@@ -7,7 +8,7 @@ from itertools import cycle, islice, zip_longest
 from math import ceil, log2
 from pathlib import Path
 from textwrap import dedent
-from typing import Iterable, Literal, Sequence, TypeVar
+from typing import Any, Iterable, Literal, Sequence, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,8 @@ def main():
 
     numbered_sequences: dict[str, list[str]] = {}
 
+    unique_generated: dict[Any, str] = {}
+
     for path in args.images:
         pixels, size = read_rgba_bitmap(
             path, negate=args.invert, rotate90=args.rotate // 90
@@ -89,18 +92,30 @@ def main():
 
         name = sanitize_variable_name(path.stem)
         formatted_name = sanitize_variable_name(args.img_name.format(name=path.stem))
-        logger.info(
-            "generating 'lv_img_dsc_t %s' from %r (%d colors: %s)",
-            formatted_name,
-            path.name,
-            color_count,
-            ", ".join(map(format_hex_rgba, px_to_index)),
-        )
 
-        code = format_indexed_template(
-            formatted_name, actual_bit_count, palette, indexed_pixels, size
-        )
+        hashed = hashlib.md5(indexed_pixels).digest(), size, tuple(palette)
+        try:
+            exsiting_formatted_name = unique_generated[hashed]
+            logger.info(
+                "generating '#define %s %s' for %r",
+                formatted_name,
+                exsiting_formatted_name,
+                path.name,
+            )
+            code = f"#define {formatted_name} {exsiting_formatted_name}"
+        except KeyError:
+            logger.info(
+                "generating 'lv_img_dsc_t %s' from %r (%d colors: %s)",
+                formatted_name,
+                path.name,
+                color_count,
+                ", ".join(map(format_hex_rgba, px_to_index)),
+            )
+            code = format_indexed_template(
+                formatted_name, actual_bit_count, palette, indexed_pixels, size
+            )
         print(code, file=out)
+        unique_generated[hashed] = formatted_name
 
         if m := re.match(r"(.+?)\d+$", name):
             basename = m.group(1)

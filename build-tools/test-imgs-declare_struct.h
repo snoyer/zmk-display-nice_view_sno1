@@ -74,6 +74,8 @@ const lv_img_dsc_t frame_a3 = {
   .data = frame_a3_map,
 };
 
+#define frame_a4 frame_a2
+#define frame_a5 frame_a1
 
 #ifndef LV_ATTRIBUTE_IMG_FRAME_B0
 #define LV_ATTRIBUTE_IMG_FRAME_B0
@@ -133,10 +135,12 @@ const lv_img_dsc_t *imgs[];
 };
 #endif  // _IMG_DSC_SEQ_STRUCT_
 
-const struct img_dsc_seq frames_a = {3, {
+const struct img_dsc_seq frames_a = {5, {
   &frame_a1,
   &frame_a2,
   &frame_a3,
+  &frame_a4,
+  &frame_a5,
 }};
 const struct img_dsc_seq frames_b = {2, {
   &frame_b0,
