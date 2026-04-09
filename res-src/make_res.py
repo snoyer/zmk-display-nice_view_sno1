@@ -35,7 +35,7 @@ def make_res(RES_SRC: Path, RES: Path):
     for out_fn, (slice, layer, *extras) in {
         "endpoint-usb-ok": ("usb-ok", "usb", 1),
         "endpoint-usb-na": ("usb-na", "usb", 1),
-        "endpoint-wl-ok": ("wl-ok", "wl", 1),
+        "endpoint-wl-ok": ("wl-ok", "wl", "wl-ok"),
         "endpoint-wl-na": ("wl-na", "wl", 1),
         "endpoint-wl-open": ("wl-open", "wl", "wl-open"),
         "endpoint-bt-ok": ("bt-ok", "bt", 1),

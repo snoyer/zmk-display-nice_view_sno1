@@ -127,11 +127,11 @@ void output_widget_update(struct widget *widget, const struct output_state *stat
     const int y_usb = -13;
     const int y_ble = +13;
 
-    void run_animation(lv_obj_t * animimg, const struct img_dsc_seq *imgs) {
-        const int frame_duration = 750;
+    void run_animation(lv_obj_t * animimg, const struct img_dsc_seq *imgs, int frame_duration,
+                       bool loop) {
         lv_animimg_set_src(animimg, (const void **)imgs->imgs, imgs->count);
         lv_animimg_set_duration(animimg, imgs->count * frame_duration);
-        lv_animimg_set_repeat_count(animimg, imgs->count > 1 ? LV_ANIM_REPEAT_INFINITE : 0);
+        lv_animimg_set_repeat_count(animimg, loop && imgs->count > 1 ? LV_ANIM_REPEAT_INFINITE : 0);
         lv_animimg_start(animimg);
     }
 
@@ -139,7 +139,7 @@ void output_widget_update(struct widget *widget, const struct output_state *stat
         const bool active = state->selected_endpoint.transport == ZMK_TRANSPORT_USB;
         const struct img_dsc_seq *a =
             state->usb_state == ZMK_USB_CONN_HID ? &icons_endpoint_usb_ok : &icons_endpoint_usb_na;
-        run_animation(animimg, a);
+        run_animation(animimg, a, 750, false);
         lv_obj_align(animimg, LV_ALIGN_CENTER, 0, y_usb);
         apply_greyout_dither_style(animimg, active);
     }
@@ -156,13 +156,15 @@ void output_widget_update(struct widget *widget, const struct output_state *stat
                                       : status == BLE_BOUND   ? &icons_endpoint_wl_na
                                                               : &icons_endpoint_wl_open;
 #endif
-        run_animation(animimg, a);
+        const bool loop = status == BLE_OPEN;
+        const int frame_duration = status == BLE_OPEN ? 750 : 150;
+        run_animation(animimg, a, frame_duration, loop);
         lv_obj_align(animimg, LV_ALIGN_CENTER, 0, y_ble);
         apply_greyout_dither_style(animimg, active);
 
         const int profile_num = state->active_profile_index + 1;
         if (profile_num < 10) {
-            const lv_img_dsc_t *num_icon = icons_n.imgs[profile_num % 10];
+            const lv_img_dsc_t *num_icon = icons_n.imgs[profile_num % icons_n.count];
             lv_img_set_src(img, num_icon);
             lv_obj_align(img, LV_ALIGN_BOTTOM_RIGHT, 0, 2);
             apply_greyout_dither_style(img, active);
