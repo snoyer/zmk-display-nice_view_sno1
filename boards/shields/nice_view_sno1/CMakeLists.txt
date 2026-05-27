@@ -61,15 +61,20 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_SNO1_STATUS
     "${SPLASHSCREEN_GIT_HASH}"
     ${CMAKE_CURRENT_SOURCE_DIR}/res/ter-u12b-mod.bdf 1 TRIM
   )
+  FILE(GLOB splashicon_pngs
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/splash-logo*.png
+  )
   generate_lvgl_indexed_images(splash-icons.h
     MODE "black_white_alpha"
     ROTATE 90
     INVERT ${CONFIG_NICE_VIEW_WIDGET_INVERTED}
-    IMAGES ${CMAKE_CURRENT_SOURCE_DIR}/res/zmk-logo.png
-           ${CMAKE_CURRENT_SOURCE_DIR}/res/zmk-txt.png
+    IMAGES ${CMAKE_CURRENT_SOURCE_DIR}/res/splash-title.png
            ${CMAKE_CURRENT_BINARY_DIR}/res/app-version.png
            ${CMAKE_CURRENT_BINARY_DIR}/res/git-hash.png
+           ${splashicon_pngs}
     IMG_NAME "icon_{name}"
+    DECLARE_SEQ_STRUCT "img_dsc_seq"
+    SEQ_NAME "icons_{name}"
   )
 
   zephyr_library_include_directories(${CMAKE_SOURCE_DIR}/include)

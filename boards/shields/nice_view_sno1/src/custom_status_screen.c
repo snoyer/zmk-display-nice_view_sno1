@@ -46,36 +46,69 @@ struct widget_set widgets;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void setup_splash_screen(lv_obj_t *screen) {
+lv_obj_t *txt, *version, *hash, *logo;
+
+void splash_screen_main(lv_anim_t *screen) {
+    lv_img_set_src(txt, &icon_splash_title);
+    lv_img_set_src(version, &icon_app_version);
+    lv_img_set_src(hash, &icon_git_hash);
+
+    lv_animimg_set_src(logo, (const void **)icons_splash_logo_main.imgs,
+                       icons_splash_logo_main.count);
+    lv_animimg_set_duration(logo, icons_splash_logo_main.count * 150);
+    lv_animimg_set_repeat_count(logo, 0);
+    lv_anim_set_completed_cb(lv_animimg_get_anim(logo), NULL);
+    lv_animimg_start(logo);
+}
+
+void splash_screen_intro(lv_obj_t *screen) {
+    LOG_DBG("display state: splash-anim");
+
+    const int logo_size = 52;
     const int logo_offset = 8;
     const int logo_padding = 6;
 
-    lv_obj_t *logo = lv_img_create(screen);
-    lv_img_set_src(logo, &icon_zmk_logo);
+    logo = lv_animimg_create(screen);
     lv_obj_align(logo, LV_ALIGN_CENTER, logo_offset, 0);
 
-    lv_obj_t *txt = lv_img_create(screen);
-    lv_img_set_src(txt, &icon_zmk_txt);
-    lv_obj_align(
-        txt, LV_ALIGN_CENTER,
-        logo_offset + icon_zmk_logo.header.w / 2 + icon_zmk_txt.header.w / 2 + logo_padding, 0);
+    txt = lv_img_create(screen);
+    lv_obj_align(txt, LV_ALIGN_CENTER,
+                 logo_offset + logo_size / 2 + icon_splash_title.header.w / 2 + logo_padding, 0);
 
-    lv_obj_t *version = lv_img_create(screen);
-    lv_img_set_src(version, &icon_app_version);
-    lv_obj_align(
-        version, LV_ALIGN_CENTER,
-        logo_offset - icon_zmk_logo.header.w / 2 - icon_app_version.header.w / 2 - logo_padding, 0);
+    version = lv_img_create(screen);
+    lv_obj_align(version, LV_ALIGN_CENTER,
+                 logo_offset - logo_size / 2 - icon_app_version.header.w / 2 - logo_padding, 0);
 
-    lv_obj_t *hash = lv_img_create(screen);
-    lv_img_set_src(hash, &icon_git_hash);
+    hash = lv_img_create(screen);
     lv_obj_align(hash, LV_ALIGN_LEFT_MID, 2, 0);
+
+    lv_animimg_set_src(logo, (const void **)icons_splash_logo_intro.imgs,
+                       icons_splash_logo_intro.count);
+    lv_animimg_set_duration(logo, icons_splash_logo_intro.count * 150);
+    lv_animimg_set_repeat_count(logo, 0);
+    lv_anim_set_completed_cb(lv_animimg_get_anim(logo), splash_screen_main);
+    lv_animimg_start(logo);
 }
 
-void hide_splash_screen_cb(struct k_work *work) {
+void hide_splash_screen() {
+    LOG_DBG("prev display state: splash");
     LOG_DBG("display state: ");
     lv_scr_load(main_screen);
 }
-static K_WORK_DELAYABLE_DEFINE(hide_splash_screen_work, hide_splash_screen_cb);
+
+void splash_screen_outro_cb(struct k_work *work) {
+    lv_img_set_src(txt, NULL);
+    lv_img_set_src(version, NULL);
+    lv_img_set_src(hash, NULL);
+
+    lv_animimg_set_src(logo, (const void **)icons_splash_logo_outro.imgs,
+                       icons_splash_logo_outro.count);
+    lv_animimg_set_duration(logo, icons_splash_logo_outro.count * 150);
+    lv_animimg_set_repeat_count(logo, 0);
+    lv_anim_set_completed_cb(lv_animimg_get_anim(logo), hide_splash_screen);
+    lv_animimg_start(logo);
+}
+static K_WORK_DELAYABLE_DEFINE(hide_splash_screen_work, splash_screen_outro_cb);
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -308,7 +341,7 @@ lv_obj_t *zmk_display_status_screen() {
     setup_widgets(&widgets, main_screen);
 
     splash_screen = lv_obj_create(NULL);
-    setup_splash_screen(splash_screen);
+    splash_screen_intro(splash_screen);
     k_work_schedule(&hide_splash_screen_work, K_MSEC(CONFIG_SPLASH_SCREEN_TIMEOUT));
 
     layer_listener_init();

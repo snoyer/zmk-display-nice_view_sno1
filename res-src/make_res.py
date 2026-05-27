@@ -33,20 +33,33 @@ def main():
 def make_res(RES_SRC: Path, RES: Path):
 
     for out_fn, (slice, layer, *extras) in {
-        "endpoint-usb-ok": ("usb-ok", "usb", 1),
-        "endpoint-usb-na": ("usb-na", "usb", 1),
+        "splash-logo-intro": ("logo", (), "intro"),
+        "splash-logo-main": ("logo", (), "main"),
+        "splash-logo-outro": ("logo", (), "outro"),
+        "splash-title": ("title", (), "title"),
+    }.items():
+        frame_range = extras[0] if extras else None
+        aseprite_export(
+            RES_SRC / "splash.ase",
+            RES / f"{out_fn}.png",
+            slice,
+            layer,
+            frame_range,
+        )
+
+    for out_fn, (slice, layer, *extras) in {
+        "endpoint-usb-ok": ("usb-ok", "usb", (1, 1)),
+        "endpoint-usb-na": ("usb-na", "usb", (1, 1)),
         "endpoint-wl-ok": ("wl-ok", "wl", "wl-ok"),
-        "endpoint-wl-na": ("wl-na", "wl", 1),
+        "endpoint-wl-na": ("wl-na", "wl", (1, 1)),
         "endpoint-wl-open": ("wl-open", "wl", "wl-open"),
-        "endpoint-bt-ok": ("bt-ok", "bt", 1),
-        "endpoint-bt-na": ("bt-na", "bt", 1),
+        "endpoint-bt-ok": ("bt-ok", "bt", (1, 1)),
+        "endpoint-bt-na": ("bt-na", "bt", (1, 1)),
         "endpoint-bt-open": ("bt-open", "bt", "bt-open"),
         "endpoint-none": ("out-none", "out-none"),
         "battery": ("battery", "battery/battery"),
         "battery-dither-mask": ("battery", "battery/dither-mask"),
         "battery-bolt": ("battery-bolt", "battery/bolt"),
-        "zmk-txt": ("splash-title", "splash"),
-        "zmk-logo": ("splash-logo", "splash"),
         **{f"n{i}": (f"n{i}", "big-digits") for i in range(10)},
     }.items():
         frame_range = extras[0] if extras else None
@@ -230,10 +243,11 @@ def aseprite_export(
         else:
             if isinstance(frames, tuple):
                 f0, f1 = frames
+                if f0 == f1:
+                    png_out = Path(png_out)
+                    png_out = png_out.with_name(f"{png_out.stem}{f0}{png_out.suffix}")
             elif frames is not None:
                 f0, f1 = frames, frames
-                png_out = Path(png_out)
-                png_out = png_out.with_name(f"{png_out.stem}{f0}{png_out.suffix}")
             else:
                 f0, f1 = 0, 0
             yield from ("--frame-range", f"{f0},{f1}")
