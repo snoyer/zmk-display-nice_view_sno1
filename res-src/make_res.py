@@ -93,12 +93,10 @@ def make_res(RES_SRC: Path, RES: Path):
     )
     save_modified_font(RES / "ter-u12b-mod.bdf", RES_SRC / "ter-u12b.bdf")
 
-    fns = [
-        RES_SRC / "ter-u14b.bdf",
-        RES / "ter-u14b-mod.bdf",
-        RES_SRC / "ter-u12b.bdf",
-        RES / "ter-u12b-mod.bdf",
-    ]
+    fns = sorted(
+        chain(RES_SRC.glob("ter-*.bdf"), RES.glob("ter-*.bdf")),
+        key=lambda p: p.stem,
+    )
     ims = [
         font_preview(BdfFont.load(fn), "A very bad quack might jinx zippy fowls")
         for fn in fns
