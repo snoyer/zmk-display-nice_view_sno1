@@ -48,6 +48,7 @@ struct output_state {
 
 #define OUTPUT_WIDGET_W 64
 #define OUTPUT_WIDGET_H 68
+void output_widget_setup(struct widget *widget);
 void output_widget_update(struct widget *widget, const struct output_state *state);
 
 ////////////////////////////////////////////////////////////////////////////////
