@@ -92,7 +92,7 @@ if(CONFIG_ZMK_DISPLAY AND CONFIG_NICE_VIEW_SNO1_STATUS
     set(testing_states_h ${CMAKE_CURRENT_BINARY_DIR}/testing_states.h)
     add_custom_command(
       OUTPUT ${testing_states_h}
-      COMMAND ${PYTHON_EXECUTABLE} ${testing_states_py} --CONFIG_TRACKED_PROFILE_COUNT="${CONFIG_TRACKED_PROFILE_COUNT}"
+      COMMAND ${PYTHON_EXECUTABLE} ${testing_states_py}
               > ${testing_states_h}
       DEPENDS ${testing_states_py}
       COMMENT "Generating test cases"

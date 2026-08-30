@@ -62,7 +62,7 @@ void splash_screen_main(lv_anim_t *screen) {
 }
 
 void splash_screen_intro(lv_obj_t *screen) {
-    LOG_DBG("display state: splash-anim");
+    LOG_DBG("display state: splash");
 
     const int logo_size = 52;
     const int logo_offset = 8;
@@ -91,7 +91,6 @@ void splash_screen_intro(lv_obj_t *screen) {
 }
 
 void hide_splash_screen() {
-    LOG_DBG("prev display state: splash");
     LOG_DBG("display state: ");
     lv_scr_load(main_screen);
 }
@@ -117,7 +116,6 @@ void update_layout_cb(struct k_work *work) {
     const bool layout_done = update_main_screen_layout(&widgets, 4);
     if (!layout_done)
         k_work_reschedule(CONTAINER_OF(work, struct k_work_delayable, work), K_MSEC(33));
-    LOG_DBG("layout_done = %d", layout_done);
 #else
     update_main_screen_layout(&widgets, 0);
 #endif
@@ -319,9 +317,6 @@ void update_demo_state_cb(struct k_work *work) {
     update_battery_state(&widgets, demo_state.batteries_state);
     update_output_state(&widgets, demo_state.output_state);
     update_layer_state(&widgets, demo_state.layer_state);
-
-    num_lock_timeout_time = caps_lock_timeout_time = scroll_lock_timeout_time =
-        k_uptime_get() + 3000; // push back icons timeout so they don't get automatically hidden
     update_hid_indicators_state(&widgets, demo_state.locks_state);
 
     k_work_reschedule(&update_locks_widget_work, K_MSEC(0));

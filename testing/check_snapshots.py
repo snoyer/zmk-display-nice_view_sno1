@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+import json
 import re
-import shutil
 import sys
-from collections.abc import Iterable
+from collections import Counter
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, field, replace
-from datetime import datetime
+from datetime import datetime, timedelta
 from itertools import count, groupby
-from math import ceil
 from os import isatty
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Counter, Sequence, cast
+from typing import Any, cast
 
 from PIL import Image, ImageDraw, ImageOps
+from PIL.PngImagePlugin import PngInfo
+from sequence_align.pairwise import needleman_wunsch_with_scores
 
 SUCCESS = "✔"
 FAILURE = "✘"
@@ -23,7 +25,6 @@ WARNING = "⚠"
 def main():
     timestamp_extractor = TimestampExtractor()
     snapshot_extractor = SnapshotExtractor()
-    varible_extractor = VariableExtractor()
 
     all_snapshots: list[Snapshot] = []
     display_state = ""
@@ -32,46 +33,62 @@ def main():
         print(line, end="")
 
         timestamp_extractor(line)
-        varible_extractor(line)
         snapshot_extractor(line)
 
         for im in snapshot_extractor.pop_snapshot_images():
             snapshot = Snapshot(
                 ImageOps.invert(im.rotate(90, expand=True)),
-                is_transition=not bool(
-                    int(varible_extractor.variables.get("layout_done", "1"))
-                ),
                 time=timestamp_extractor.seconds,
             )
-            snapshot.state = display_state
-            if not all_snapshots or snapshot != all_snapshots[-1]:
-                print(snapshot)
+            if not all_snapshots or snapshot.image != all_snapshots[-1].image:
+                snapshot.state = display_state
                 all_snapshots.append(snapshot)
 
-        if m := re.search(r"prev display state:\s*(.*)", line):
-            if all_snapshots:
-                all_snapshots[-1].state = str(m.group(1))
-        elif m := re.search(r"display state:\s*(.*)", line):
+        if m := re.search(r"display state:\s*(.*)", line):
             display_state = str(m.group(1))
 
-    columns = int(varible_extractor.variables.get("CONFIG_TRACKED_PROFILE_COUNT", 5))
-    padding = 16
-
     success = True
+    TMP_DIR = Path(gettempdir()) / "zmk-display-nice_view_sno1"
+    TMP_SNAPSHOTS_DIR = TMP_DIR / "snapshots"
+    TMP_SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
+    REF_SNAPSHOTS_DIR = Path(__file__).parent / "expected"
 
-    TMP_DIR = Path(gettempdir())
-    ALL_SNAPSHOTS_DIR = TMP_DIR / "all-snapshots"
-
-    if ALL_SNAPSHOTS_DIR.is_dir():
-        shutil.rmtree(ALL_SNAPSHOTS_DIR)
-    ALL_SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
-    for i, s in enumerate(all_snapshots):
-        fn = (
-            ALL_SNAPSHOTS_DIR
-            / f"{i:04d}-{s.group}#{s.step}{'~' if s.is_transition else ''}.png"
+    for key, frame_groups in find_frames_groups(all_snapshots):
+        collated_im = collate_frame_groups(frame_groups, "LA")
+        collated_im.save(
+            TMP_SNAPSHOTS_DIR / f"snapshots{key}.png", pnginfo=pnginfo(collated_im.info)
         )
-        s.image.save(fn)
 
+        ref_path = REF_SNAPSHOTS_DIR / f"snapshots{key}.png"
+        if ref_path.is_file():
+            old_collated_im = Image.open(ref_path).convert("LA")
+            old_frame_groups = list(uncollate_frame_groups(old_collated_im))
+
+            if len(frame_groups) == len(old_frame_groups):
+                diffs = [
+                    frame_group_diff(xx, yy)
+                    for xx, yy in zip(old_frame_groups, frame_groups)
+                ]
+                diff_count = sum(px_count for _, px_count in diffs)
+                if diff_count:
+                    print(FAILURE, key, f"({diff_count} pixels difference)")
+                    success = False
+                else:
+                    print(SUCCESS, key)
+
+                collated_diff = collate_frame_groups(
+                    [[(im, 0) for im in ims] for ims, _ in diffs], "RGBA"
+                )
+                apply_pixel_grid(collated_diff).save(
+                    TMP_DIR / f"snapshots{key}.diff.png"
+                )
+            else:
+                print(WARNING, key, "(different size)")
+
+    return 0 if success else 1
+
+
+def find_frames_groups(all_snapshots: list[Snapshot]):
     counter = Counter()
     for group, snapshots_by_group in groupby(all_snapshots, key=lambda s: s.group):
         if not group:
@@ -85,42 +102,132 @@ def main():
 
         snapshots_by_step: list[list[Snapshot]] = []
         for _step, snapshots in groupby(snapshots_by_group, key=lambda s: s.step):
-            snapshots = list(snapshots)
-            while snapshots and snapshots[0].is_transition:
-                snapshots.pop(0)
-            while snapshots and snapshots[-1].is_transition:
-                snapshots.pop(-1)
-            if snapshots:
+            if snapshots := list(snapshots):
                 t0 = snapshots[0].time
                 snapshots_by_step.append(
                     [replace(s, time=s.time - t0) for s in snapshots]
                 )
 
-        nontransition_images = [snapshots[0].image for snapshots in snapshots_by_step]
-        collated_im = collate_images(
-            nontransition_images, "LA", columns=columns, padding=padding
+        animated_frame_groups = [
+            [(snapshot.image, snapshot.time) for snapshot in snapshots]
+            for snapshots in snapshots_by_step
+        ]
+        yield f"{key}-anim", animated_frame_groups
+
+        image_groups = [frames[:1] for frames in animated_frame_groups]
+        yield f"{key}", image_groups
+
+
+def pnginfo(info: dict[str | tuple[int, int], Any]):
+    pnginfo = PngInfo()
+    for k, v in info.items():
+        if isinstance(v, str):
+            pnginfo.add_text(str(k), v)
+        # TODO?
+    return pnginfo
+
+
+def frame_group_diff(
+    old_images: Sequence[tuple[Image.Image, float]],
+    new_images: Sequence[tuple[Image.Image, float]],
+):
+    diffs = list(
+        image_sequence_diff([im for im, _ in old_images], [im for im, _ in new_images])
+    )
+    return [im for im, _ in diffs], sum(px_count for _, px_count in diffs)
+
+
+def collate_frame_groups(
+    frame_groups: list[list[tuple[Image.Image, float]]],
+    mode: str,
+    max_width: int = 900,
+    margin: int = 16,
+):
+    small_padding = 8
+    big_padding = 16
+    v_padding = 16
+
+    images_by_line: list[list[tuple[Image.Image, int]]] = [[]]
+    x = 0
+    for frames in frame_groups:
+        for image, _time in frames:
+            if x + image.width >= max_width - 2 * margin:
+                images_by_line.append([])
+                x = 0
+            images_by_line[-1].append((image, x))
+            x += image.width + small_padding
+        x += big_padding - small_padding
+
+    line_widths = [max(image.width + x for image, x in line) for line in images_by_line]
+    line_heights = [max(image.height for image, _ in line) for line in images_by_line]
+
+    w = max(line_widths)
+    h = sum(line_heights) + v_padding * (len(line_heights) - 1)
+
+    dst_im = Image.new(mode, (w + 2 * margin, h + 2 * margin))
+    y = 0
+    areas: list[tuple[int, int, int, int]] = []
+    for line, h in zip(images_by_line, line_heights):
+        for im, x in line:
+            dst_im.paste(im, (x + margin, y + margin))
+            areas.append((x + margin, y + margin, im.width, im.height))
+        y += h + v_padding
+
+    dst_im.info = {
+        "areas": json.dumps(areas, separators=(",", ":")),
+        "times": json.dumps(
+            [[t for _im, t in frames] for frames in frame_groups],
+            separators=(",", ":"),
+        ),
+    }
+    return dst_im
+
+
+def uncollate_frame_groups(
+    collated_im: Image.Image,
+) -> Iterator[list[tuple[Image.Image, float]]]:
+    boxes = iter(
+        (x, y, x + w, y + h) for x, y, w, h in json.loads(collated_im.info["areas"])
+    )
+    for times in json.loads(collated_im.info["times"]):
+        yield [(collated_im.crop(next(boxes)), t) for t in times]
+
+
+T0 = datetime.strptime("00:00:00", "%H:%M:%S")  # noqa: DTZ007
+
+
+def parse_timestamp(ts: str):
+    return datetime.strptime(ts[:-4], "%H:%M:%S.%f") - T0  # noqa: DTZ007
+
+
+def image_sequence_diff(
+    old_images: Sequence[Image.Image], new_images: Sequence[Image.Image]
+):
+    empty = Image.new("L", old_images[0].size, 0)
+
+    def overlap_score(a: Image.Image | None, b: Image.Image | None):
+        if a == b:
+            return 4.0
+
+        data_a = cast(Iterable[int], (a or empty).convert("L").getdata())
+        data_b = cast(Iterable[int], (b or empty).convert("L").getdata())
+        sum1 = sum(1 if px != 0 else 0 for px in data_a)
+        sum2 = sum(1 if px != 0 else 0 for px in data_b)
+        union = sum(
+            1 if px_a != 0 and px_b != 0 else 0 for px_a, px_b in zip(data_a, data_b)
         )
+        return (2 * union) / (sum1 + sum2) if sum1 and sum2 else 0
 
-        collated_im.save(TMP_DIR / f"snapshots{key}.png")
-
-        ref_path = Path(__file__).parent / "expected" / f"snapshots{key}.png"
-        if ref_path.is_file():
-            old_im = Image.open(ref_path).convert("LA")
-            if old_im.size == collated_im.size:
-                collated_im, diff_count = image_diff(collated_im, old_im)
-                if diff_count:
-                    print(FAILURE, key, f"({diff_count} pixels difference)")
-                    success = False
-                else:
-                    print(SUCCESS, key)
-            else:
-                print(WARNING, key, "(different size)")
-        else:
-            print(WARNING, key, "(no reference)")
-
-        apply_pixel_grid(collated_im).save(TMP_DIR / f"snapshots{key}.diff.png")
-
-    return 0 if success else 1
+    aligned_seq1, aligned_seq2 = needleman_wunsch_with_scores(
+        old_images,
+        new_images,
+        None,
+        score_fn=overlap_score,
+        indel_score=-1.0,
+    )
+    return (
+        image_diff(b or empty, a or empty) for a, b in zip(aligned_seq1, aligned_seq2)
+    )
 
 
 def image_diff(new_im: Image.Image, old_im: Image.Image):
@@ -139,51 +246,17 @@ def image_diff(new_im: Image.Image, old_im: Image.Image):
     return diff, diff_count
 
 
-def collate_images(
-    images: list[Image.Image], mode: str, columns: int, padding: int = 0
-):
-    w = max(im.size[0] for im in images)
-    h = max(im.size[1] for im in images)
-
-    nx = min(columns, len(images))
-    ny = int(ceil(len(images) / nx))
-
-    dst_im = Image.new(mode, (nx * (w + padding), ny * (h + padding)))
-    for i, im in enumerate(images):
-        x = padding // 2 + (w + padding) * (i % nx)
-        y = padding // 2 + (h + padding) * (i // nx)
-        ox = (w - im.size[0]) // 2
-        oy = (h - im.size[1]) // 2
-        dst_im.paste(im, (x + ox, y + oy))
-    return dst_im
-
-
-def parse_timestamp(ts: str):
-    return datetime.strptime(ts[:-4], "%H:%M:%S.%f")
-
-
 @dataclass
 class TimestampExtractor:
-    timestamp: datetime = parse_timestamp("00:00:00.000,000")
-    T0 = parse_timestamp("00:00:00.000,000")
+    time: timedelta = field(default_factory=timedelta)
 
     def __call__(self, line: str):
         if m := re.match(r"\[([0-9.,:]+)\]", line):
-            self.timestamp = parse_timestamp(m.group(1))
+            self.time = parse_timestamp(m.group(1))
 
     @property
     def seconds(self):
-        d = self.timestamp - self.T0
-        return d.seconds + d.microseconds / 1_000_000
-
-
-@dataclass
-class VariableExtractor:
-    variables: dict[str, str] = field(default_factory=dict)
-
-    def __call__(self, line: str):
-        for k, v in re.findall(r"([\S=]+)\s*=\s*(.+)", line):
-            self.variables[k] = v.strip()
+        return self.time.seconds + self.time.microseconds / 1_000_000
 
 
 @dataclass
@@ -223,7 +296,6 @@ class Snapshot:
     image: Image.Image
     group: str = ""
     step: int = 0
-    is_transition: bool = False
     time: float = 0.0
 
     @property
